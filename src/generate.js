@@ -1,3 +1,5 @@
+import { isBlocked } from './blocklist.js';
+
 export const VOWELS = ['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü'];
 export const VOWEL_COMBOS = ['ei', 'au', 'eu', 'äu', 'ie'];
 export const CONSONANTS = [
@@ -118,9 +120,11 @@ const MAX_ATTEMPTS = 200;
 const FULL_LENGTH_SHARE = 0.8;
 
 export function pickCount(maxSyllables, rng) {
-  if (maxSyllables === 1 || rng() < FULL_LENGTH_SHARE) return maxSyllables;
-  return 1 + Math.floor(rng() * (maxSyllables - 1));
+  const max = Math.max(1, Math.floor(maxSyllables));
+  if (max === 1 || rng() < FULL_LENGTH_SHARE) return max;
+  return 1 + Math.floor(rng() * (max - 1));
 }
+
 const JUNCTION_RETRIES = 50;
 const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie']);
 
@@ -170,15 +174,29 @@ export function generate(
     return { syllables, real: false };
   };
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const round = draw();
-    if (!seen.has(comboKey(round.syllables))) {
-      seen.add(comboKey(round.syllables));
-      return round;
+  const acceptable = (round) => round.real || !isBlocked(round.syllables);
+  const search = () => {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const round = draw();
+      if (!seen.has(comboKey(round.syllables)) && acceptable(round)) return round;
+    }
+    return null;
+  };
+
+  let round = search();
+  if (!round) {
+    const last = [...seen].at(-1);
+    seen.clear();
+    if (last) seen.add(last);
+    round = search();
+  }
+  if (!round) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS && !round; attempt++) {
+      const candidate = draw();
+      if (acceptable(candidate)) round = candidate;
     }
   }
-  seen.clear();
-  const round = draw();
+  if (!round) return null;
   seen.add(comboKey(round.syllables));
   return round;
 }

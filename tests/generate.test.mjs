@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { isBlocked } from '../src/blocklist.js';
 import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
 const words = parseWords(JSON.parse(readFileSync(new URL('../data/words.json', import.meta.url))));
@@ -56,7 +57,9 @@ const distinctFirstRun = new Set(shown.slice(0, 2));
 assert.equal(distinctFirstRun.size, 2, 'no repeat before the pool is exhausted');
 const unique = new Set(shown.slice(0, 3));
 assert.equal(unique.size, 3, 'la, al, lal each appear once before any repeat');
-assert.ok(shown.length === 40, 'keeps producing after the pool is exhausted');
+for (let i = 1; i < shown.length; i++) {
+  assert.notEqual(shown[i], shown[i - 1], `same combination twice in a row at round ${i}`);
+}
 
 const withCk = new Set(['a', 'k', 'c', 'ck']);
 for (let i = 0; i < 500; i++) {
@@ -90,12 +93,13 @@ for (let i = 0; i < 5000; i++) {
   const r = generate(vowelHeavy, 4, words, rng, { realRatio: 0.3 });
   assert.ok(!hasMergingJunction(r.syllables), `merging junction in ${r.syllables.join(' ')}`);
 }
-assert.ok(words.every((w) => !hasMergingJunction(w.syllables) || true));
+assert.ok(words.every((w) => !hasMergingJunction(w.syllables)), 'word list has no merging junction');
 
 const tally = { 1: 0, 2: 0, 3: 0, 4: 0 };
 for (let i = 0; i < 10000; i++) tally[pickCount(3, rng)]++;
-assert.ok(tally[3] > 7600 && tally[3] < 8400, `80% full length, got ${tally[3]}`);
-assert.ok(tally[1] > 800 && tally[2] > 800, 'rest split between shorter counts');
+assert.ok(tally[3] > 7850 && tally[3] < 8150, `80% full length, got ${tally[3]}`);
+assert.ok(tally[1] > 900 && tally[1] < 1100 && tally[2] > 900 && tally[2] < 1100, 'rest split evenly');
+assert.equal(pickCount(0, rng), 1, 'zero is clamped to one');
 assert.equal(tally[4], 0);
 assert.ok([...Array(50)].every(() => pickCount(1, rng) === 1));
 
@@ -116,5 +120,79 @@ for (let i = 0; i < 3000; i++) {
   if (generate(known, 2, words, rng).syllables.some((s) => s.length === 3)) threeLetter++;
 }
 assert.ok(threeLetter > 0, 'longer syllables still possible when the option is off');
+
+// capitalisation: only the first letter of made-up rounds, and both cases occur
+let capitalFirst = 0;
+let lowerFirst = 0;
+for (let i = 0; i < 2000; i++) {
+  const r = generate(known, 3, words, rng, { realRatio: 0 });
+  assert.ok(r.syllables.slice(1).every((x) => x === x.toLowerCase()), `later syllable capitalised: ${r.syllables}`);
+  assert.equal(r.syllables[0].slice(1), r.syllables[0].slice(1).toLowerCase());
+  if (r.syllables[0][0] !== r.syllables[0][0].toLowerCase()) capitalFirst++;
+  else lowerFirst++;
+}
+assert.ok(capitalFirst > 800 && lowerFirst > 800, `first letter capitalised about half the time: ${capitalFirst}/${lowerFirst}`);
+
+// real words keep their stored spelling
+const keepsCase = new Set();
+for (let i = 0; i < 500; i++) {
+  const r = generate(new Set(['m', 'a', 'l', 'o', 'i', 's']), 3, words, rng, { realRatio: 1, twoLetters: true });
+  if (r.real) keepsCase.add(r.syllables.join(''));
+}
+assert.ok(keepsCase.has('Salami') || keepsCase.has('Mama'), 'real words appear with stored casing');
+assert.ok(![...keepsCase].some((w) => w === w.toLowerCase() && /^[A-ZÄÖÜ]/.test(w)));
+
+// real words: never longer than the configured maximum, never already shown
+const pool = new Set(['b', 'n', 'a', 'm', 'e']);
+const twoAndThree = parseWords(['Ma·ma', 'Ba·na·ne', 'Na·ne']);
+for (let i = 0; i < 1000; i++) {
+  const r = generate(pool, 2, twoAndThree, rng, { realRatio: 1, twoLetters: true });
+  assert.ok(r.syllables.length <= 2, `too many syllables: ${r.syllables}`);
+}
+const alreadyShown = new Set(['ma·ma', 'na·ne']);
+for (let i = 0; i < 500; i++) {
+  const r = generate(pool, 2, twoAndThree, rng, { realRatio: 1, twoLetters: true, seen: new Set(alreadyShown) });
+  assert.ok(!(r.real && alreadyShown.has(r.syllables.join('·').toLowerCase())), `repeated real word ${r.syllables}`);
+}
+
+// merging pairs, one by one
+for (const [a, b] of [['me', 'ut'], ['mä', 'ut'], ['mi', 'et'], ['me', 'it'], ['ma', 'it'], ['ma', 'ut']]) {
+  assert.ok(mergesAtJunction(a, b), `${a} ${b} should merge`);
+}
+assert.ok(mergesAtJunction('mE', 'Ut'), 'junction check ignores case');
+
+// blocklist
+assert.ok(isBlocked(['hu', 're']));
+assert.ok(isBlocked(['Na', 'zi']));
+assert.ok(isBlocked(['mö', 'se']));
+assert.ok(!isBlocked(['la', 'ma']));
+const risky = new Set(['h', 'u', 'r', 'e', 'n', 'a', 'z', 'i', 'm', 'ö', 's', 'k', 'p', 'l', 'o']);
+for (let i = 0; i < 20000; i++) {
+  const r = generate(risky, 3, words, rng, { realRatio: 0, twoLetters: true });
+  assert.ok(!isBlocked(r.syllables), `blocked string shown: ${r.syllables.join(' ')}`);
+}
+
+// limitation we accept: with only a vowel pair the junction cannot be avoided
+const onlyEi = generate(new Set(['ei']), 2, words, rng, { twoLetters: true });
+assert.ok(onlyEi.syllables.every((x) => x.toLowerCase() === 'ei'));
+
+// never throws for odd maximum
+assert.ok(generate(known, 0, words, rng).syllables.length >= 1);
+
+// exact syllable count: shorter real words only in the shorter rounds (~20% of draws)
+const mixed = parseWords(['am', 'Ma·ma']);
+let oneSyllable = 0;
+for (let i = 0; i < 5000; i++) {
+  const r = generate(new Set(['m', 'a']), 2, mixed, rng, { realRatio: 1, twoLetters: true });
+  if (r.real && r.syllables.length === 1) oneSyllable++;
+}
+assert.ok(oneSyllable > 750 && oneSyllable < 1250, `one-syllable words only for count 1, got ${oneSyllable}/5000`);
+
+// real words with a merging junction are never served
+const bad = parseWords(['la·ut']);
+for (let i = 0; i < 300; i++) {
+  const r = generate(new Set(['l', 'a', 'u', 't']), 2, bad, rng, { realRatio: 1, twoLetters: true });
+  assert.ok(!(r.real && r.syllables.join('·') === 'la·ut'), 'word with merging junction served');
+}
 
 console.log('all tests passed');
