@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { doublesConsonant, hasDoubledConsonant } from '../src/generate.js';
+import { alternates, consonantsMeet, doublesConsonant, hasDoubledConsonant } from '../src/generate.js';
 import { isBlocked } from '../src/blocklist.js';
 import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
@@ -118,7 +118,8 @@ for (let i = 0; i < 5000; i++) {
 assert.ok(oneLetter > 100, `single-letter syllables such as 'O ma' appear (${oneLetter})`);
 assert.ok(twoLetter > oneLetter, 'two-letter syllables stay the norm');
 assert.ok(canGenerate(new Set(['a', 'l']), { twoLetters: true }));
-assert.ok(canGenerate(new Set(['a', 'e']), { twoLetters: true }), 'a lone vowel is a syllable in this mode');
+assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: true }), 'lone vowels alone give no round of two letters');
+assert.ok(canGenerate(new Set(['a', 'ei']), { twoLetters: true }), 'ei makes a two-letter syllable');
 assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: false }), 'never a single letter without the option');
 assert.ok(!canGenerate(new Set(['l', 'm']), { twoLetters: true }), 'no vowel, no syllable');
 assert.ok(canGenerate(new Set(['ei']), { twoLetters: true }), 'ei is two letters');
@@ -322,4 +323,71 @@ for (let i = 0; i < 600; i++) {
   assert.ok(!(off.real && off.syllables.join('') === 'Oma'), 'Oma served without the option');
 }
 assert.ok(omaOn, 'Oma is served with the option on');
+// vowels and consonants take turns (option "alternate")
+assert.ok(consonantsMeet('al', 'ma'));
+assert.ok(consonantsMeet('Es', 'te'));
+assert.ok(consonantsMeet('mal', 'sch'.slice(0, 1) + 'u'));
+assert.ok(!consonantsMeet('ma', 'la'));
+assert.ok(!consonantsMeet('al', 'am'));
+assert.ok(!consonantsMeet('la', 'am'));
+assert.ok(alternates(['La', 'ma']));
+assert.ok(alternates(['Ba', 'na', 'ne']));
+assert.ok(alternates(['Tisch']), 'sch counts as one consonant unit');
+assert.ok(alternates(['Schu', 'le']));
+assert.ok(alternates(['Ei']), 'a vowel pair counts as one vowel unit');
+assert.ok(!alternates(['Hand']), 'n and d are two consonants in a row');
+assert.ok(!alternates(['Kis', 'te']));
+assert.ok(!alternates(['Rol', 'ler']));
+assert.ok(!alternates(['Spin', 'ne']));
+assert.ok(alternates(['Mal']));
+
+const turnsKnown = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's', 'n', 't']);
+for (const twoLetters of [true, false]) {
+  let hitsOff = 0;
+  for (let i = 0; i < 4000; i++) {
+    const on = generate(turnsKnown, 4, words, rng, { twoLetters, alternate: true, avoidDoubled: false, realRatio: 0.4 });
+    assert.ok(alternates(on.syllables), `not alternating: ${on.syllables.join(' ')} (twoLetters=${twoLetters})`);
+    const off = generate(turnsKnown, 4, words, rng, { twoLetters, alternate: false, avoidDoubled: false, realRatio: 0 });
+    if (!alternates(off.syllables)) hitsOff++;
+  }
+  assert.ok(hitsOff > 200, `without the option consonants do meet (${hitsOff}, twoLetters=${twoLetters})`);
+}
+
+// real words that do not alternate are skipped only with the option on (Kis·te, Hand)
+const clusterWords = parseWords(['Kis·te']);
+const clusterKnown = new Set(['k', 'i', 's', 't', 'e']);
+let kisteOff = false;
+for (let i = 0; i < 400; i++) {
+  const on = generate(clusterKnown, 2, clusterWords, rng, { realRatio: 1, alternate: true });
+  assert.ok(!(on.real && on.syllables.join('') === 'Kiste'), 'Kiste served with alternation on');
+  const off = generate(clusterKnown, 2, clusterWords, rng, { realRatio: 1, alternate: false });
+  if (off.real && off.syllables.join('') === 'Kiste') kisteOff = true;
+}
+assert.ok(kisteOff, 'Kiste is served without the option');
+const handWords = parseWords(['Hand']);
+for (let i = 0; i < 300; i++) {
+  const on = generate(new Set(['h', 'a', 'n', 'd', 'l']), 1, handWords, rng, { realRatio: 1, alternate: true });
+  assert.ok(!(on.real && on.syllables[0] === 'Hand'), 'Hand served although n and d meet');
+}
+
+// a round never consists of a single letter
+const lonely = [new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']), new Set(['a', 'o', 'l']), new Set(['a', 'ei', 'l'])];
+for (const known of lonely) {
+  for (const twoLetters of [true, false]) {
+    for (const max of [1, 2, 3]) {
+      for (let i = 0; i < 1500; i++) {
+        const r = generate(known, max, words, rng, { twoLetters, avoidDoubled: true, realRatio: 0.3 });
+        assert.ok(r.syllables.join('').length >= 2, `single-letter round: ${r.syllables.join(' ')} (max ${max}, twoLetters ${twoLetters})`);
+      }
+    }
+  }
+}
+// ...but a single-letter syllable still occurs inside longer rounds (O ma)
+let singleInside = 0;
+for (let i = 0; i < 3000; i++) {
+  const r = generate(new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']), 2, words, rng, { twoLetters: true, avoidDoubled: true });
+  if (r.syllables.length > 1 && r.syllables.some((x) => x.length === 1)) singleInside++;
+}
+assert.ok(singleInside > 50, `one-letter syllables still appear inside longer rounds (${singleInside})`);
+
 console.log('all tests passed');

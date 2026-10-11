@@ -30,6 +30,7 @@ let known = new Set();
 let maxSyllables = 2;
 let twoLetters = true;
 let avoidDoubled = true;
+let alternate = false;
 let words = [];
 let spinning = false;
 let timers = [];
@@ -50,6 +51,7 @@ function load() {
   maxSyllables = state.max;
   twoLetters = state.twoLetters;
   avoidDoubled = state.avoidDoubled;
+  alternate = state.alternate;
   return state.saved;
 }
 
@@ -57,7 +59,7 @@ function save() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters, avoidDoubled }),
+      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters, avoidDoubled, alternate }),
     );
   } catch {
     // storage unavailable
@@ -138,6 +140,10 @@ function refreshMaxChoices() {
   });
 }
 
+function refreshAlternate() {
+  $('#alternate').setAttribute('aria-checked', String(alternate));
+}
+
 function refreshNoDoubles() {
   $('#no-doubles').setAttribute('aria-checked', String(avoidDoubled));
 }
@@ -170,7 +176,7 @@ function cancelSpin() {
 
 function spin(animate = true) {
   if (spinning) return;
-  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters, avoidDoubled });
+  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters, avoidDoubled, alternate });
   if (!round) return;
   const pools = unitPools(known, { twoLetters });
 
@@ -225,7 +231,7 @@ async function showPlay() {
   cancelSpin();
   $('#setup').hidden = true;
   $('#play').hidden = false;
-  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled);
+  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate);
   spin(false);
   $('#start').focus();
 }
@@ -259,6 +265,11 @@ function init() {
   buildMaxChoices();
   refreshTwoLetters();
   refreshNoDoubles();
+  refreshAlternate();
+  $('#alternate').addEventListener('click', () => {
+    alternate = !alternate;
+    refreshAlternate();
+  });
   $('#no-doubles').addEventListener('click', () => {
     avoidDoubled = !avoidDoubled;
     refreshNoDoubles();

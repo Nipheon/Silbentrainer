@@ -53,15 +53,22 @@ export function unitPools(known, { twoLetters = false } = {}) {
 
 // twoLetters: every syllable has one or two letters (o, ma, al, ei), so a lone vowel is a syllable.
 // Without it, a syllable never has a single letter and may be longer than two.
-function vowelsFor(pools, shape) {
-  if (shape === 'V') return pools.twoLetters ? pools.vowels : pools.vowels.filter((v) => v.length > 1);
+// minLength: a round of one syllable never shows a single letter.
+// start: the syllable must begin with a 'vowel' or a 'consonant' (decided by the previous syllable).
+function vowelsFor(pools, shape, minLength = 1) {
+  if (shape === 'V') {
+    const vowels = pools.twoLetters ? pools.vowels : pools.vowels.filter((v) => v.length > 1);
+    return vowels.filter((v) => v.length >= minLength);
+  }
   return pools.twoLetters ? pools.vowels.filter((v) => v.length === 1) : pools.vowels;
 }
 
-function feasiblePatterns(pools) {
+function feasiblePatterns(pools, { start = null, minLength = 1 } = {}) {
   return PATTERNS.filter(({ shape }) => {
     if (pools.twoLetters && shape === 'KVK') return false;
-    if (vowelsFor(pools, shape).length === 0) return false;
+    if (start === 'vowel' && shape.startsWith('K')) return false;
+    if (start === 'consonant' && !shape.startsWith('K')) return false;
+    if (vowelsFor(pools, shape, minLength).length === 0) return false;
     if (shape.startsWith('K') && pools.onsets.length === 0) return false;
     if (shape.endsWith('K') && pools.codas.length === 0) return false;
     return true;
@@ -69,16 +76,21 @@ function feasiblePatterns(pools) {
 }
 
 export function canGenerate(known, options) {
-  return feasiblePatterns(unitPools(known, options)).length > 0;
+  return feasiblePatterns(unitPools(known, options), { minLength: 2 }).length > 0;
 }
 
-export function makeSyllable(pools, rng) {
-  const feasible = feasiblePatterns(pools);
+export function makeSyllable(pools, rng, constraint = {}) {
+  let used = constraint;
+  let feasible = feasiblePatterns(pools, used);
+  if (feasible.length === 0) {
+    used = {};
+    feasible = feasiblePatterns(pools);
+  }
   if (feasible.length === 0) return null;
   const { shape } = pickWeighted(feasible, rng);
   let out = '';
   if (shape.startsWith('K')) out += pick(pools.onsets, rng);
-  out += pick(vowelsFor(pools, shape), rng);
+  out += pick(vowelsFor(pools, shape, used.minLength), rng);
   if (shape.endsWith('K')) out += pick(pools.codas, rng);
   return out;
 }
@@ -137,6 +149,21 @@ export function mergesAtJunction(previous, next) {
   );
 }
 
+const isConsonantLetter = (c) => /\p{L}/u.test(c) && !VOWEL_LETTERS.has(c);
+
+export function consonantsMeet(previous, next) {
+  return (
+    isConsonantLetter(previous.slice(-1).toLowerCase()) &&
+    isConsonantLetter(next.slice(0, 1).toLowerCase())
+  );
+}
+
+// vowel and consonant units take turns across the whole word (sch, ch, ei count as one unit)
+export function alternates(syllables) {
+  const units = syllables.flatMap((s) => tokenize(s) ?? []);
+  return units.every((unit, i) => i === 0 || VOWEL_UNITS.has(unit) !== VOWEL_UNITS.has(units[i - 1]));
+}
+
 export function hasMergingJunction(syllables) {
   return syllables.some((s, i) => i > 0 && mergesAtJunction(syllables[i - 1], s));
 }
@@ -159,10 +186,16 @@ export function generate(
   maxSyllables,
   words,
   rng = Math.random,
-  { realRatio = 0.6, seen = new Set(), twoLetters = false, avoidDoubled = false } = {},
+  {
+    realRatio = 0.6,
+    seen = new Set(),
+    twoLetters = false,
+    avoidDoubled = false,
+    alternate = false,
+  } = {},
 ) {
   const pools = unitPools(known, { twoLetters });
-  if (feasiblePatterns(pools).length === 0) return null;
+  if (!canGenerate(known, { twoLetters })) return null;
 
   const knownWords = words.filter((w) => wordIsKnown(w, known, { twoLetters }));
   const draw = () => {
@@ -172,19 +205,29 @@ export function generate(
         w.syllables.length === count &&
         !seen.has(comboKey(w.syllables)) &&
         !hasMergingJunction(w.syllables) &&
-        !(avoidDoubled && hasDoubledConsonant(w.syllables)),
+        !(avoidDoubled && hasDoubledConsonant(w.syllables)) &&
+        !(alternate && !alternates(w.syllables)),
     );
     if (candidates.length > 0 && rng() < realRatio) {
       return { syllables: pick(candidates, rng).syllables, real: true };
     }
     const junctionIsBad = (previous, next) =>
-      mergesAtJunction(previous, next) || (avoidDoubled && doublesConsonant(previous, next));
+      mergesAtJunction(previous, next) ||
+      (avoidDoubled && doublesConsonant(previous, next)) ||
+      (alternate && consonantsMeet(previous, next));
     const syllables = [];
     for (let i = 0; i < count; i++) {
-      let syllable = makeSyllable(pools, rng);
+      let start = null;
+      if (i > 0) {
+        const last = syllables[i - 1].slice(-1).toLowerCase();
+        if (VOWEL_LETTERS.has(last)) start = 'consonant';
+        else if (alternate) start = 'vowel';
+      }
+      const constraint = { start, minLength: count === 1 ? 2 : 1 };
+      let syllable = makeSyllable(pools, rng, constraint);
       for (let retry = 0; retry < JUNCTION_RETRIES && i > 0; retry++) {
         if (!junctionIsBad(syllables[i - 1], syllable)) break;
-        syllable = makeSyllable(pools, rng);
+        syllable = makeSyllable(pools, rng, constraint);
       }
       syllables.push(syllable);
     }
@@ -192,7 +235,8 @@ export function generate(
     return { syllables, real: false };
   };
 
-  const acceptable = (round) => round.real || !isBlocked(round.syllables);
+  const acceptable = (round) =>
+    round.syllables.join('').length >= 2 && (round.real || !isBlocked(round.syllables));
   const search = () => {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const round = draw();

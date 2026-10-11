@@ -27,6 +27,8 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
   Ohne diese Option haben Silben nie einen einzelnen Buchstaben, sind aber länger möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
 - Jede Silbe hat einen Vokal; `st`, `sp`, `qu` nur am Silbenanfang, `ck` nur am Ende.
 - Am Silbenübergang folgen nie zwei Vokale aufeinander (nicht `Mi il`, `Lo am`, `Le im`).
+- Eine Runde besteht nie aus nur einem Buchstaben (`O ma` ja, `E` allein nein).
+- Optional (Standard aus): Vokal und Konsonant wechseln sich ab, auch zwischen Silben (nicht `al ma`) und in echten Wörtern (nicht `Kis·te`, `Hand`).
 - Optional (Standard an): keine Doppelung von `b d f g k l m n p r s t z` am Silbenübergang (nicht `at te`, `am ma`, `es se`, `ak ku`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt.
 - Eine bereits gezeigte Kombination kommt in derselben Sitzung nicht wieder.
 - Erfundene Silben laufen durch eine Sperrliste (`src/blocklist.js`).

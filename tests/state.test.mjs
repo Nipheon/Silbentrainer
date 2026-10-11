@@ -8,6 +8,7 @@ assert.deepEqual(DEFAULT_KNOWN, ['a', 'e', 'i', 'o', 'l', 'm', 's']);
 assert.equal(empty.max, 2);
 assert.equal(empty.twoLetters, true);
 assert.equal(empty.avoidDoubled, true, 'doubled consonants avoided by default');
+assert.equal(empty.alternate, false, 'alternation is off by default');
 
 assert.equal(restoreState('not json').saved, false);
 assert.equal(restoreState('{"max":3}').saved, false, 'no known list means no configuration');
@@ -52,6 +53,13 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'], avoidDoubled: 'no' })).
 assert.equal(
   describeSelection(new Set(['a', 'm']), 2, true, true),
   'Bekannt: a, m · höchstens 2 Silben · ein oder zwei Buchstaben pro Silbe · ohne Doppelkonsonanten',
+);
+
+assert.equal(restoreState(JSON.stringify({ known: ['a'], alternate: true })).alternate, true);
+assert.equal(restoreState(JSON.stringify({ known: ['a'], alternate: 'yes' })).alternate, false, 'non-boolean falls back');
+assert.equal(
+  describeSelection(new Set(['a', 'm']), 2, true, true, true),
+  'Bekannt: a, m · höchstens 2 Silben · ein oder zwei Buchstaben pro Silbe · ohne Doppelkonsonanten · Vokal und Konsonant im Wechsel',
 );
 
 console.log('state tests passed');
