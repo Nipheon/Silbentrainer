@@ -228,9 +228,10 @@ for (const [a, b] of [['at', 'te'], ['op', 'pe'], ['am', 'ma'], ['en', 'na'], ['
   assert.ok(doublesConsonant(a, b), `${a} ${b} doubles`);
 }
 assert.ok(doublesConsonant('es', 'se'));
+assert.ok(doublesConsonant('ak', 'ku'), 'Akku');
 assert.ok(!doublesConsonant('at', 'se'));
-for (const c of 'bdfglmnprst') assert.ok(doublesConsonant(`a${c}`, `${c}a`), `${c}${c} is avoided`);
-for (const c of 'hjkvwxzq') assert.ok(!doublesConsonant(`a${c}`, `${c}a`), `${c}${c} does not occur in German, not avoided`);
+for (const c of 'bdfgklmnprstz') assert.ok(doublesConsonant(`a${c}`, `${c}a`), `${c}${c} is avoided`);
+for (const c of 'hjvwxq') assert.ok(!doublesConsonant(`a${c}`, `${c}a`), `${c}${c} does not occur in German, not avoided`);
 assert.ok(!doublesConsonant('ma', 'ma'), 'vowel at the junction is fine');
 assert.ok(!doublesConsonant('mi', 'it'), 'only consonants count as doubled');
 assert.ok(!doublesConsonant('am', 'at'), 'vowel after the consonant is fine');

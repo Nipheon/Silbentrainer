@@ -137,7 +137,7 @@ export function hasMergingJunction(syllables) {
   return syllables.some((s, i) => i > 0 && mergesAtJunction(syllables[i - 1], s));
 }
 
-const AVOIDED_DOUBLES = ['b', 'd', 'f', 'g', 'l', 'm', 'n', 'p', 'r', 's', 't'];
+const AVOIDED_DOUBLES = ['b', 'd', 'f', 'g', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'z'];
 
 export function doublesConsonant(previous, next) {
   const last = previous.slice(-1).toLowerCase();

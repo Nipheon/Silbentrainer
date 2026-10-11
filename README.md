@@ -27,7 +27,7 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
   längere Silben möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
 - Jede Silbe hat einen Vokal; `st`, `sp`, `qu` nur am Silbenanfang, `ck` nur am Ende.
 - Am Silbenübergang entstehen kein `ei`, `ai`, `au`, `eu`, `äu`, `ie`, `aa`, `ee` und `oo`.
-- Optional (Standard an): keine Doppelung von `b d f g l m n p r s t` am Silbenübergang (nicht `at te`, `am ma`, `es se`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt, `k` und `z` stehen als `ck` und `tz`.
+- Optional (Standard an): keine Doppelung von `b d f g k l m n p r s t z` am Silbenübergang (nicht `at te`, `am ma`, `es se`, `ak ku`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt.
 - Eine bereits gezeigte Kombination kommt in derselben Sitzung nicht wieder.
 - Erfundene Silben laufen durch eine Sperrliste (`src/blocklist.js`).
 - Echte Wörter stehen in `data/words.json`, von Hand mit Sprechsilben geschrieben.
