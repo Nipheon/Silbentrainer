@@ -9,6 +9,7 @@ import {
   parseWords,
   unitPools,
 } from './generate.js';
+import { MAX_CHOICES, describeSelection, restoreState } from './state.js';
 
 const STORAGE_KEY = 'silbentrainer.v1';
 const GROUPS = {
@@ -17,40 +18,63 @@ const GROUPS = {
   consonants: CONSONANTS,
   consonantCombos: CONSONANT_COMBOS,
 };
-const MAX_CHOICES = [1, 2, 3, 4];
 const SPIN_MS = 600;
 const SPIN_STAGGER_MS = 350;
 const TICK_MS = 70;
+const ANNOUNCE_DELAY_MS = 60;
+const SETUP_ERROR =
+  'Wähle mindestens einen Vokal und einen Konsonanten, damit Silben mit mindestens zwei Buchstaben entstehen.';
 
-const known = new Set();
+let known = new Set();
 let maxSyllables = 2;
 let twoLetters = true;
 let words = [];
 let spinning = false;
+let timers = [];
 const seen = new Set();
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function load() {
+  let raw = null;
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved) {
-      saved.known.forEach((unit) => known.add(unit));
-      if (MAX_CHOICES.includes(saved.max)) maxSyllables = saved.max;
-      if (typeof saved.twoLetters === 'boolean') twoLetters = saved.twoLetters;
-    }
+    raw = localStorage.getItem(STORAGE_KEY);
   } catch {
-    // no saved state
+    // storage unavailable
   }
+  const state = restoreState(raw);
+  known = state.known;
+  maxSyllables = state.max;
+  twoLetters = state.twoLetters;
 }
 
 function save() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ known: [...known], max: maxSyllables, twoLetters }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters }),
+    );
   } catch {
     // storage unavailable
   }
+}
+
+function announce(text) {
+  const result = $('#result');
+  result.textContent = '';
+  setTimeout(() => {
+    result.textContent = text;
+  }, ANNOUNCE_DELAY_MS);
+}
+
+function showSetupError() {
+  const error = $('#setup-error');
+  error.hidden = false;
+  error.textContent = '';
+  setTimeout(() => {
+    error.textContent = SETUP_ERROR;
+  }, ANNOUNCE_DELAY_MS);
 }
 
 function buildTiles() {
@@ -74,6 +98,13 @@ function buildTiles() {
   }
 }
 
+function selectMax(n, { focus = false } = {}) {
+  maxSyllables = n;
+  refreshMaxChoices();
+  if (focus) document.querySelector('.segment[tabindex="0"]').focus();
+  save();
+}
+
 function buildMaxChoices() {
   const container = $('#max');
   for (const n of MAX_CHOICES) {
@@ -82,26 +113,31 @@ function buildMaxChoices() {
     button.className = 'segment';
     button.textContent = String(n);
     button.setAttribute('role', 'radio');
-    button.addEventListener('click', () => {
-      maxSyllables = n;
-      refreshMaxChoices();
-      save();
+    button.addEventListener('click', () => selectMax(n));
+    button.addEventListener('keydown', (event) => {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+      if (!step) return;
+      event.preventDefault();
+      const next = (MAX_CHOICES.indexOf(n) + step + MAX_CHOICES.length) % MAX_CHOICES.length;
+      selectMax(MAX_CHOICES[next], { focus: true });
     });
     container.append(button);
   }
   refreshMaxChoices();
 }
 
+function refreshMaxChoices() {
+  document.querySelectorAll('.segment').forEach((button) => {
+    const checked = Number(button.textContent) === maxSyllables;
+    button.setAttribute('aria-checked', String(checked));
+    button.tabIndex = checked ? 0 : -1;
+  });
+}
+
 function refreshTwoLetters() {
   $('#two-letters').setAttribute('aria-checked', String(twoLetters));
   $('#more-sounds').hidden = twoLetters;
   $('#more-sounds-note').hidden = !twoLetters;
-}
-
-function refreshMaxChoices() {
-  document.querySelectorAll('.segment').forEach((button) => {
-    button.setAttribute('aria-checked', String(Number(button.textContent) === maxSyllables));
-  });
 }
 
 function showReels(syllables) {
@@ -117,6 +153,13 @@ function showReels(syllables) {
   );
 }
 
+function cancelSpin() {
+  timers.forEach(({ id, repeating }) => (repeating ? clearInterval(id) : clearTimeout(id)));
+  timers = [];
+  spinning = false;
+  $('#start').removeAttribute('aria-disabled');
+}
+
 function spin(animate = true) {
   if (spinning) return;
   const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters });
@@ -126,12 +169,9 @@ function spin(animate = true) {
   showReels(round.syllables);
   const spans = [...document.querySelectorAll('#reels .syllable')];
   const prompt = $('#prompt');
-  const result = $('#result');
   const finish = () => {
-    spinning = false;
-    $('#start').disabled = false;
-    const text = round.syllables.join(' ');
-    result.textContent = text;
+    cancelSpin();
+    announce(round.syllables.join(' '));
     prompt.textContent =
       round.syllables.length === 1
         ? 'Lies die Silbe. Bereit für die nächste Runde?'
@@ -144,61 +184,82 @@ function spin(animate = true) {
   }
 
   spinning = true;
-  $('#start').disabled = true;
+  $('#start').setAttribute('aria-disabled', 'true');
   prompt.textContent = 'Die Walzen drehen sich …';
   let remaining = spans.length;
   spans.forEach((span, index) => {
     span.classList.add('spinning');
-    const timer = setInterval(() => {
+    span.textContent = makeSyllable(pools, Math.random);
+    const intervalId = setInterval(() => {
       span.textContent = makeSyllable(pools, Math.random);
     }, TICK_MS);
-    setTimeout(() => {
-      clearInterval(timer);
-      span.textContent = round.syllables[index];
-      span.classList.remove('spinning');
-      remaining -= 1;
-      if (remaining === 0) finish();
-    }, SPIN_MS + index * SPIN_STAGGER_MS);
+    timers.push({ repeating: true, id: intervalId });
+    timers.push({
+      repeating: false,
+      id: setTimeout(() => {
+        clearInterval(intervalId);
+        span.textContent = round.syllables[index];
+        span.classList.remove('spinning');
+        remaining -= 1;
+        if (remaining === 0) finish();
+      }, SPIN_MS + index * SPIN_STAGGER_MS),
+    });
   });
 }
 
-function showPlay() {
+async function showPlay() {
   if (!canGenerate(known, { twoLetters })) {
-    $('#setup-error').hidden = false;
+    showSetupError();
     return;
   }
+  await wordsReady;
+  cancelSpin();
   $('#setup').hidden = true;
   $('#play').hidden = false;
-  const letters = [...known].sort((a, b) => a.localeCompare(b, 'de')).join(', ');
-  $('#summary').textContent = `Bekannt: ${letters} · höchstens ${maxSyllables} ${maxSyllables === 1 ? 'Silbe' : 'Silben'}`;
+  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters);
   spin(false);
+  $('#start').focus();
 }
 
 function showSetup() {
+  cancelSpin();
   $('#play').hidden = true;
   $('#setup').hidden = false;
+  $('#setup h1').focus();
 }
 
-async function init() {
+async function loadWords() {
+  try {
+    const response = await fetch('data/words.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const entries = await response.json();
+    if (!Array.isArray(entries)) throw new Error('not a list');
+    words = parseWords(entries.filter((entry) => typeof entry === 'string'));
+  } catch {
+    words = [];
+    $('#data-warning').hidden = false;
+  }
+}
+
+let wordsReady = Promise.resolve();
+
+function init() {
+  $('#load-error').hidden = true;
+  $('#setup').hidden = false;
   load();
   buildTiles();
   buildMaxChoices();
+  refreshTwoLetters();
   $('#two-letters').addEventListener('click', () => {
     twoLetters = !twoLetters;
     refreshTwoLetters();
     $('#setup-error').hidden = true;
     save();
   });
-  refreshTwoLetters();
   $('#go').addEventListener('click', showPlay);
   $('#start').addEventListener('click', () => spin());
   $('#back').addEventListener('click', showSetup);
-  try {
-    const response = await fetch('data/words.json');
-    words = parseWords(await response.json());
-  } catch {
-    words = [];
-  }
+  wordsReady = loadWords();
 }
 
 init();

@@ -3,13 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Silbentrainer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
-    <section id="setup" class="card">
-      <h1>Welche Buchstaben sind schon bekannt?</h1>
+    <p id="load-error" class="error">Die Seite kann so nicht starten. Bitte über einen Webserver öffnen, zum Beispiel mit <code>python3 -m http.server</code> im Ordner dieser Datei, und dann <code>http://localhost:8000</code> aufrufen.</p>
+    <section id="setup" class="card" hidden>
+      <h1 tabindex="-1">Welche Buchstaben sind schon bekannt?</h1>
       <p class="lead">Tippe die Buchstaben an, die das Kind schon kennt, und wähle, wie viele Silben es höchstens lesen soll.</p>
 
       <h2>Vokale</h2>
@@ -35,7 +38,7 @@
       </button>
 
       <button id="go" class="primary" type="button">Los geht's</button>
-      <p id="setup-error" class="error" role="alert" hidden>Wähle mindestens einen Vokal und einen Konsonanten, damit Silben mit mindestens zwei Buchstaben entstehen.</p>
+      <p id="setup-error" class="error" role="alert" hidden></p>
     </section>
 
     <section id="play" class="card" hidden>
@@ -44,10 +47,11 @@
       <button id="start" class="primary" type="button">START</button>
       <p id="prompt" class="prompt">Drücke START und lies die Silben.</p>
       <p id="summary" class="summary"></p>
+      <p id="data-warning" class="error" role="status" hidden>Die Wörterliste konnte nicht geladen werden. Es erscheinen nur erfundene Silben.</p>
       <button id="back" class="link" type="button">Buchstaben ändern</button>
     </section>
   </main>
-  <footer>Schrift: <a href="https://urff.app/grundschrift/">Grundschrift von Christian Urff</a> (CC BY 3.0), Ersatzschrift Andika (SIL OFL)</footer>
+  <footer>Schrift: <a href="https://urff.app/grundschrift/">Grundschrift von Christian Urff</a> (<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>), Ersatzschrift Andika (SIL OFL)</footer>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>

@@ -2,5 +2,8 @@
   "name": "silbentrainer",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node tests/generate.test.mjs" }
+  "scripts": {
+    "test": "node tests/generate.test.mjs && node tests/state.test.mjs"
+  },
+  "license": "MIT"
 }
