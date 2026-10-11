@@ -153,26 +153,21 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 
 .reels {
   display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-.reel {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 9rem;
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  background: #000;
-  color: #fff;
+  gap: 0.25em 1.25rem;
+  min-height: 9rem;
+  padding: 1rem;
+  background: #fff;
+  color: #000;
   border: 3px solid var(--line);
   border-radius: 1rem;
-  overflow: hidden;
 }
 .syllable { font-size: clamp(1.9rem, 11vw, 3.75rem); font-weight: 400; }
 .reels[data-count='3'] .syllable { font-size: clamp(1.6rem, 8.5vw, 3.25rem); }
 .reels[data-count='4'] .syllable { font-size: clamp(1.3rem, 6.5vw, 2.75rem); }
-.reel.spinning .syllable { opacity: 0.55; }
+.syllable.spinning { opacity: 0.55; }
 
 .prompt { text-align: center; margin: 1rem 0 0; }
 .summary { text-align: center; color: var(--muted); font-size: 0.95rem; margin: 0.5rem 0 0; }

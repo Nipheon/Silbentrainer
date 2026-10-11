@@ -97,17 +97,14 @@ function refreshMaxChoices() {
 }
 
 function showReels(syllables) {
-  const reels = $('#reels');
-  reels.dataset.count = String(syllables.length);
-  reels.replaceChildren(
+  const field = $('#reels');
+  field.dataset.count = String(syllables.length);
+  field.replaceChildren(
     ...syllables.map((text) => {
-      const reel = document.createElement('div');
-      reel.className = 'reel';
       const span = document.createElement('span');
       span.className = 'syllable';
       span.textContent = text;
-      reel.append(span);
-      return reel;
+      return span;
     }),
   );
 }
@@ -119,7 +116,7 @@ function spin() {
   const pools = unitPools(known);
 
   showReels(round.syllables);
-  const reelNodes = [...document.querySelectorAll('.reel')];
+  const spans = [...document.querySelectorAll('#reels .syllable')];
   const prompt = $('#prompt');
   const result = $('#result');
   const finish = () => {
@@ -141,17 +138,16 @@ function spin() {
   spinning = true;
   $('#start').disabled = true;
   prompt.textContent = 'Die Walzen drehen sich …';
-  let remaining = reelNodes.length;
-  reelNodes.forEach((reel, index) => {
-    const span = reel.querySelector('.syllable');
-    reel.classList.add('spinning');
+  let remaining = spans.length;
+  spans.forEach((span, index) => {
+    span.classList.add('spinning');
     const timer = setInterval(() => {
       span.textContent = makeSyllable(pools, Math.random);
     }, TICK_MS);
     setTimeout(() => {
       clearInterval(timer);
       span.textContent = round.syllables[index];
-      reel.classList.remove('spinning');
+      span.classList.remove('spinning');
       remaining -= 1;
       if (remaining === 0) finish();
     }, SPIN_MS + index * SPIN_STAGGER_MS);
