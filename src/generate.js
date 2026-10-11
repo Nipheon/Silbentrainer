@@ -137,9 +137,11 @@ export function hasMergingJunction(syllables) {
   return syllables.some((s, i) => i > 0 && mergesAtJunction(syllables[i - 1], s));
 }
 
+const AVOIDED_DOUBLES = ['l', 'm', 'n', 'p', 't'];
+
 export function doublesConsonant(previous, next) {
   const last = previous.slice(-1).toLowerCase();
-  return CONSONANTS.includes(last) && last === next.slice(0, 1).toLowerCase();
+  return AVOIDED_DOUBLES.includes(last) && last === next.slice(0, 1).toLowerCase();
 }
 
 export function hasDoubledConsonant(syllables) {

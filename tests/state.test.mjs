@@ -45,7 +45,7 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'], avoidDoubled: false }))
 assert.equal(restoreState(JSON.stringify({ known: ['a'], avoidDoubled: 'no' })).avoidDoubled, true, 'non-boolean falls back');
 assert.equal(
   describeSelection(new Set(['a', 'm']), 2, true, true),
-  'Bekannt: a, m · höchstens 2 Silben · zwei Buchstaben pro Silbe · ohne Doppelkonsonanten',
+  'Bekannt: a, m · höchstens 2 Silben · zwei Buchstaben pro Silbe · ohne Doppelung von l, m, n, p, t',
 );
 
 console.log('state tests passed');

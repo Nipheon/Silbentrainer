@@ -228,6 +228,9 @@ for (const [a, b] of [['at', 'te'], ['op', 'pe'], ['am', 'ma'], ['en', 'na'], ['
   assert.ok(doublesConsonant(a, b), `${a} ${b} doubles`);
 }
 assert.ok(!doublesConsonant('at', 'se'));
+assert.ok(!doublesConsonant('ab', 'ba'), 'only l, m, n, p, t are avoided');
+assert.ok(!doublesConsonant('as', 'sa'));
+assert.ok(!doublesConsonant('ak', 'ka'));
 assert.ok(!doublesConsonant('ma', 'ma'), 'vowel at the junction is fine');
 assert.ok(!doublesConsonant('mi', 'it'), 'only consonants count as doubled');
 assert.ok(!doublesConsonant('am', 'at'), 'vowel after the consonant is fine');
