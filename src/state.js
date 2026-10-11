@@ -11,7 +11,7 @@ export const DEFAULT_MAX = 2;
 const ALL_UNITS = new Set([...VOWELS, ...VOWEL_COMBOS, ...CONSONANTS, ...CONSONANT_COMBOS]);
 
 export function restoreState(raw) {
-  const state = { saved: false, known: new Set(), max: DEFAULT_MAX, twoLetters: true };
+  const state = { saved: false, known: new Set(), max: DEFAULT_MAX, twoLetters: true, avoidDoubled: true };
   let saved;
   try {
     saved = JSON.parse(raw);
@@ -27,14 +27,16 @@ export function restoreState(raw) {
   }
   if (MAX_CHOICES.includes(saved.max)) state.max = saved.max;
   if (typeof saved.twoLetters === 'boolean') state.twoLetters = saved.twoLetters;
+  if (typeof saved.avoidDoubled === 'boolean') state.avoidDoubled = saved.avoidDoubled;
   return state;
 }
 
-export function describeSelection(known, max, twoLetters) {
+export function describeSelection(known, max, twoLetters, avoidDoubled = false) {
   const units = [...known]
     .filter((unit) => !(twoLetters && CONSONANT_COMBOS.includes(unit)))
     .sort((a, b) => a.localeCompare(b, 'de'));
   const syllables = max === 1 ? 'Silbe' : 'Silben';
   const mode = twoLetters ? 'zwei Buchstaben pro Silbe' : 'Silben beliebig lang';
-  return `Bekannt: ${units.join(', ')} · höchstens ${max} ${syllables} · ${mode}`;
+  const doubles = avoidDoubled ? ' · ohne Doppelkonsonanten' : '';
+  return `Bekannt: ${units.join(', ')} · höchstens ${max} ${syllables} · ${mode}${doubles}`;
 }

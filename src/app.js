@@ -28,6 +28,7 @@ const SETUP_ERROR =
 let known = new Set();
 let maxSyllables = 2;
 let twoLetters = true;
+let avoidDoubled = true;
 let words = [];
 let spinning = false;
 let timers = [];
@@ -47,6 +48,7 @@ function load() {
   known = state.known;
   maxSyllables = state.max;
   twoLetters = state.twoLetters;
+  avoidDoubled = state.avoidDoubled;
   return state.saved;
 }
 
@@ -54,7 +56,7 @@ function save() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters }),
+      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters, avoidDoubled }),
     );
   } catch {
     // storage unavailable
@@ -133,6 +135,10 @@ function refreshMaxChoices() {
   });
 }
 
+function refreshNoDoubles() {
+  $('#no-doubles').setAttribute('aria-checked', String(avoidDoubled));
+}
+
 function refreshTwoLetters() {
   $('#two-letters').setAttribute('aria-checked', String(twoLetters));
   $('#more-sounds').hidden = twoLetters;
@@ -161,7 +167,7 @@ function cancelSpin() {
 
 function spin(animate = true) {
   if (spinning) return;
-  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters });
+  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters, avoidDoubled });
   if (!round) return;
   const pools = unitPools(known, { twoLetters });
 
@@ -216,7 +222,7 @@ async function showPlay() {
   cancelSpin();
   $('#setup').hidden = true;
   $('#play').hidden = false;
-  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters);
+  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled);
   spin(false);
   $('#start').focus();
 }
@@ -249,6 +255,11 @@ function init() {
   buildTiles();
   buildMaxChoices();
   refreshTwoLetters();
+  refreshNoDoubles();
+  $('#no-doubles').addEventListener('click', () => {
+    avoidDoubled = !avoidDoubled;
+    refreshNoDoubles();
+  });
   $('#two-letters').addEventListener('click', () => {
     twoLetters = !twoLetters;
     refreshTwoLetters();

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { doublesConsonant, hasDoubledConsonant } from '../src/generate.js';
 import { isBlocked } from '../src/blocklist.js';
 import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
@@ -221,5 +222,37 @@ for (let i = 0; i < 2000 && !realFree; i++) {
   if (r.real && ['Tee', 'See', 'Aal'].includes(r.syllables[0])) realFree = true;
 }
 assert.ok(realFree, 'Tee/See/Aal are served as real words with the option off');
+
+// doubled consonants across a syllable junction (at te, op pe, am ma, en na)
+for (const [a, b] of [['at', 'te'], ['op', 'pe'], ['am', 'ma'], ['en', 'na'], ['Al', 'la']]) {
+  assert.ok(doublesConsonant(a, b), `${a} ${b} doubles`);
+}
+assert.ok(!doublesConsonant('at', 'se'));
+assert.ok(!doublesConsonant('ma', 'ma'), 'vowel at the junction is fine');
+assert.ok(!doublesConsonant('mi', 'it'), 'only consonants count as doubled');
+assert.ok(!doublesConsonant('am', 'at'), 'vowel after the consonant is fine');
+assert.ok(hasDoubledConsonant(['la', 'am', 'ma']));
+
+const doublePool = new Set(['a', 'o', 'e', 'l', 'm', 'n', 'p', 't']);
+let doubledOff = 0;
+for (let i = 0; i < 4000; i++) {
+  const on = generate(doublePool, 3, words, rng, { realRatio: 0.3, twoLetters: true, avoidDoubled: true });
+  assert.ok(!hasDoubledConsonant(on.syllables), `doubled consonant: ${on.syllables.join(' ')}`);
+  const off = generate(doublePool, 3, words, rng, { realRatio: 0, twoLetters: true, avoidDoubled: false });
+  if (hasDoubledConsonant(off.syllables)) doubledOff++;
+}
+assert.ok(doubledOff > 100, `doubles still appear with the option off (${doubledOff})`);
+
+// real words with a doubled consonant (Rol·ler, Sup·pe) are skipped only when the option is on
+const doubledWords = parseWords(['Rol·ler']);
+const rollerKnown = new Set(['r', 'o', 'l', 'e']);
+let rollerOff = false;
+for (let i = 0; i < 400; i++) {
+  const on = generate(rollerKnown, 2, doubledWords, rng, { realRatio: 1, avoidDoubled: true });
+  assert.ok(!(on.real && on.syllables.join('') === 'Roller'), 'Roller served despite the option');
+  const off = generate(rollerKnown, 2, doubledWords, rng, { realRatio: 1, avoidDoubled: false });
+  if (off.real && off.syllables.join('') === 'Roller') rollerOff = true;
+}
+assert.ok(rollerOff, 'Roller is served when the option is off');
 
 console.log('all tests passed');

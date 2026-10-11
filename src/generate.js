@@ -137,6 +137,15 @@ export function hasMergingJunction(syllables) {
   return syllables.some((s, i) => i > 0 && mergesAtJunction(syllables[i - 1], s));
 }
 
+export function doublesConsonant(previous, next) {
+  const last = previous.slice(-1).toLowerCase();
+  return CONSONANTS.includes(last) && last === next.slice(0, 1).toLowerCase();
+}
+
+export function hasDoubledConsonant(syllables) {
+  return syllables.some((s, i) => i > 0 && doublesConsonant(syllables[i - 1], s));
+}
+
 const comboKey = (syllables) => syllables.join('·').toLowerCase();
 
 export function generate(
@@ -144,7 +153,7 @@ export function generate(
   maxSyllables,
   words,
   rng = Math.random,
-  { realRatio = 0.6, seen = new Set(), twoLetters = false } = {},
+  { realRatio = 0.6, seen = new Set(), twoLetters = false, avoidDoubled = false } = {},
 ) {
   const pools = unitPools(known, { twoLetters });
   if (feasiblePatterns(pools).length === 0) return null;
@@ -156,16 +165,19 @@ export function generate(
       (w) =>
         w.syllables.length === count &&
         !seen.has(comboKey(w.syllables)) &&
-        !hasMergingJunction(w.syllables),
+        !hasMergingJunction(w.syllables) &&
+        !(avoidDoubled && hasDoubledConsonant(w.syllables)),
     );
     if (candidates.length > 0 && rng() < realRatio) {
       return { syllables: pick(candidates, rng).syllables, real: true };
     }
+    const junctionIsBad = (previous, next) =>
+      mergesAtJunction(previous, next) || (avoidDoubled && doublesConsonant(previous, next));
     const syllables = [];
     for (let i = 0; i < count; i++) {
       let syllable = makeSyllable(pools, rng);
       for (let retry = 0; retry < JUNCTION_RETRIES && i > 0; retry++) {
-        if (!mergesAtJunction(syllables[i - 1], syllable)) break;
+        if (!junctionIsBad(syllables[i - 1], syllable)) break;
         syllable = makeSyllable(pools, rng);
       }
       syllables.push(syllable);
