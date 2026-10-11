@@ -43,17 +43,28 @@ export function unitPools(known) {
   };
 }
 
-export function makeSyllable(pools, rng) {
-  if (pools.vowels.length === 0) return null;
-  const feasible = PATTERNS.filter(({ shape }) => {
+function feasiblePatterns(pools) {
+  return PATTERNS.filter(({ shape }) => {
+    const vowels = shape === 'V' ? pools.vowels.filter((v) => v.length > 1) : pools.vowels;
+    if (vowels.length === 0) return false;
     if (shape.startsWith('K') && pools.onsets.length === 0) return false;
     if (shape.endsWith('K') && pools.codas.length === 0) return false;
     return true;
   });
+}
+
+export function canGenerate(known) {
+  return feasiblePatterns(unitPools(known)).length > 0;
+}
+
+export function makeSyllable(pools, rng) {
+  const feasible = feasiblePatterns(pools);
+  if (feasible.length === 0) return null;
   const { shape } = pickWeighted(feasible, rng);
+  const vowels = shape === 'V' ? pools.vowels.filter((v) => v.length > 1) : pools.vowels;
   let out = '';
   if (shape.startsWith('K')) out += pick(pools.onsets, rng);
-  out += pick(pools.vowels, rng);
+  out += pick(vowels, rng);
   if (shape.endsWith('K')) out += pick(pools.codas, rng);
   return out;
 }
@@ -84,24 +95,50 @@ export function parseWords(entries) {
 }
 
 export function wordIsKnown(word, known) {
-  return word.syllables.every((s) => syllableIsKnown(s, known));
+  return word.syllables.every((s) => s.length > 1 && syllableIsKnown(s, known));
 }
 
 function capitalize(text) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export function generate(known, maxSyllables, words, rng = Math.random, realRatio = 0.6) {
+const MAX_ATTEMPTS = 200;
+
+const comboKey = (syllables) => syllables.join('·').toLowerCase();
+
+export function generate(
+  known,
+  maxSyllables,
+  words,
+  rng = Math.random,
+  { realRatio = 0.6, seen = new Set() } = {},
+) {
   const pools = unitPools(known);
-  if (pools.vowels.length === 0) return null;
+  if (feasiblePatterns(pools).length === 0) return null;
 
-  const count = 1 + Math.floor(rng() * maxSyllables);
-  const candidates = words.filter((w) => w.syllables.length === count && wordIsKnown(w, known));
-  if (candidates.length > 0 && rng() < realRatio) {
-    return { syllables: pick(candidates, rng).syllables, real: true };
+  const knownWords = words.filter((w) => wordIsKnown(w, known));
+  const draw = () => {
+    const count = 1 + Math.floor(rng() * maxSyllables);
+    const candidates = knownWords.filter(
+      (w) => w.syllables.length === count && !seen.has(comboKey(w.syllables)),
+    );
+    if (candidates.length > 0 && rng() < realRatio) {
+      return { syllables: pick(candidates, rng).syllables, real: true };
+    }
+    const syllables = Array.from({ length: count }, () => makeSyllable(pools, rng));
+    if (rng() < 0.5) syllables[0] = capitalize(syllables[0]);
+    return { syllables, real: false };
+  };
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const round = draw();
+    if (!seen.has(comboKey(round.syllables))) {
+      seen.add(comboKey(round.syllables));
+      return round;
+    }
   }
-
-  const syllables = Array.from({ length: count }, () => makeSyllable(pools, rng));
-  if (rng() < 0.5) syllables[0] = capitalize(syllables[0]);
-  return { syllables, real: false };
+  seen.clear();
+  const round = draw();
+  seen.add(comboKey(round.syllables));
+  return round;
 }

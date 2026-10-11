@@ -3,6 +3,7 @@ import {
   CONSONANT_COMBOS,
   VOWELS,
   VOWEL_COMBOS,
+  canGenerate,
   generate,
   makeSyllable,
   parseWords,
@@ -25,6 +26,7 @@ const known = new Set();
 let maxSyllables = 2;
 let words = [];
 let spinning = false;
+const seen = new Set();
 
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -112,7 +114,7 @@ function showReels(syllables) {
 
 function spin() {
   if (spinning) return;
-  const round = generate(known, maxSyllables, words);
+  const round = generate(known, maxSyllables, words, Math.random, { seen });
   if (!round) return;
   const pools = unitPools(known);
 
@@ -157,8 +159,7 @@ function spin() {
 }
 
 function showPlay() {
-  const pools = unitPools(known);
-  if (pools.vowels.length === 0) {
+  if (!canGenerate(known)) {
     $('#setup-error').hidden = false;
     return;
   }

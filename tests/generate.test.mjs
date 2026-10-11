@@ -35,8 +35,28 @@ assert.ok(real > 0, 'real words appear');
 
 assert.equal(generate(new Set(['l', 'm']), 3, words, rng), null, 'no vowel, no output');
 
-const vowelsOnly = generate(new Set(['a']), 2, words, rng);
-assert.ok(vowelsOnly.syllables.every((s) => s.toLowerCase() === 'a'));
+assert.equal(generate(new Set(['a']), 2, words, rng), null, 'single letter syllables are never shown');
+assert.equal(generate(new Set(['a', 'e']), 2, words, rng), null, 'vowels alone cannot form 2 letters');
+const combosOnly = generate(new Set(['ei']), 2, words, rng);
+assert.ok(combosOnly.syllables.every((s) => s.toLowerCase() === 'ei'));
+
+for (let i = 0; i < 3000; i++) {
+  for (const s of generate(known, 3, words, rng).syllables) assert.ok(s.length >= 2, `single letter ${s}`);
+}
+assert.ok(!wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a'])), 'O·ma has a single-letter syllable');
+
+const seen = new Set();
+const small = new Set(['a', 'l']);
+const shown = [];
+for (let i = 0; i < 40; i++) {
+  const r = generate(small, 1, words, rng, { realRatio: 0, seen });
+  shown.push(r.syllables.join('').toLowerCase());
+}
+const distinctFirstRun = new Set(shown.slice(0, 2));
+assert.equal(distinctFirstRun.size, 2, 'no repeat before the pool is exhausted');
+const unique = new Set(shown.slice(0, 3));
+assert.equal(unique.size, 3, 'la, al, lal each appear once before any repeat');
+assert.ok(shown.length === 40, 'keeps producing after the pool is exhausted');
 
 const withCk = new Set(['a', 'k', 'c', 'ck']);
 for (let i = 0; i < 500; i++) {
@@ -53,7 +73,7 @@ assert.ok(syllableIsKnown('sta', new Set(['a', 'st'])));
 
 const withSt = new Set(['a', 'm', 's', 't', 'st', 'sp', 'p']);
 for (let i = 0; i < 1000; i++) {
-  for (const s of generate(withSt, 3, words, rng, 0).syllables) {
+  for (const s of generate(withSt, 3, words, rng, { realRatio: 0 }).syllables) {
     assert.ok(!/(st|sp)$/i.test(s), 'st/sp never at syllable end');
   }
 }
