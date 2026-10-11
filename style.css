@@ -1,4 +1,16 @@
 @font-face {
+  font-family: 'Grundschrift';
+  src: url('fonts/grundschrift/Grundschrift-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Grundschrift';
+  src: url('fonts/grundschrift/Grundschrift-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
   font-family: 'Andika';
   src: url('fonts/Andika-Regular.ttf') format('truetype');
   font-weight: 400;
@@ -46,7 +58,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Andika', system-ui, sans-serif;
+  font-family: 'Grundschrift', 'Andika', system-ui, sans-serif;
   font-size: 1.125rem;
   line-height: 1.5;
 }
@@ -168,6 +180,7 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 .summary { text-align: center; color: var(--muted); font-size: 0.95rem; margin: 0.5rem 0 0; }
 
 footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1rem; }
+footer a { color: inherit; }
 
 .sr-only {
   position: absolute;
