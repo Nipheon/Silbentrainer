@@ -103,6 +103,12 @@ function capitalize(text) {
 }
 
 const MAX_ATTEMPTS = 200;
+const FULL_LENGTH_SHARE = 0.8;
+
+export function pickCount(maxSyllables, rng) {
+  if (maxSyllables === 1 || rng() < FULL_LENGTH_SHARE) return maxSyllables;
+  return 1 + Math.floor(rng() * (maxSyllables - 1));
+}
 const JUNCTION_RETRIES = 50;
 const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie']);
 
@@ -129,7 +135,7 @@ export function generate(
 
   const knownWords = words.filter((w) => wordIsKnown(w, known));
   const draw = () => {
-    const count = 1 + Math.floor(rng() * maxSyllables);
+    const count = pickCount(maxSyllables, rng);
     const candidates = knownWords.filter(
       (w) =>
         w.syllables.length === count &&

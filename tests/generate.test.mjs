@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { generate, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
+import { generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
 const words = parseWords(JSON.parse(readFileSync(new URL('../data/words.json', import.meta.url))));
 const known = new Set(['a', 'l', 'm']);
@@ -91,5 +91,12 @@ for (let i = 0; i < 5000; i++) {
   assert.ok(!hasMergingJunction(r.syllables), `merging junction in ${r.syllables.join(' ')}`);
 }
 assert.ok(words.every((w) => !hasMergingJunction(w.syllables) || true));
+
+const tally = { 1: 0, 2: 0, 3: 0, 4: 0 };
+for (let i = 0; i < 10000; i++) tally[pickCount(3, rng)]++;
+assert.ok(tally[3] > 7600 && tally[3] < 8400, `80% full length, got ${tally[3]}`);
+assert.ok(tally[1] > 800 && tally[2] > 800, 'rest split between shorter counts');
+assert.equal(tally[4], 0);
+assert.ok([...Array(50)].every(() => pickCount(1, rng) === 1));
 
 console.log('all tests passed');
