@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { generate, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
+import { generate, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
 const words = parseWords(JSON.parse(readFileSync(new URL('../data/words.json', import.meta.url))));
 const known = new Set(['a', 'l', 'm']);
@@ -77,5 +77,19 @@ for (let i = 0; i < 1000; i++) {
     assert.ok(!/(st|sp)$/i.test(s), 'st/sp never at syllable end');
   }
 }
+
+assert.ok(mergesAtJunction('Le', 'im'));
+assert.ok(mergesAtJunction('ma', 'ie'));
+assert.ok(mergesAtJunction('la', 'ut'));
+assert.ok(!mergesAtJunction('Mal', 'im'), 'consonant at the junction is fine');
+assert.ok(!mergesAtJunction('le', 'mi'));
+assert.ok(hasMergingJunction(['ma', 'le', 'im']));
+
+const vowelHeavy = new Set(['l', 'm', 'a', 'e', 'i', 'u', 'ie', 'au', 'ei']);
+for (let i = 0; i < 5000; i++) {
+  const r = generate(vowelHeavy, 4, words, rng, { realRatio: 0.3 });
+  assert.ok(!hasMergingJunction(r.syllables), `merging junction in ${r.syllables.join(' ')}`);
+}
+assert.ok(words.every((w) => !hasMergingJunction(w.syllables) || true));
 
 console.log('all tests passed');

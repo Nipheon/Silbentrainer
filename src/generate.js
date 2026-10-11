@@ -103,6 +103,17 @@ function capitalize(text) {
 }
 
 const MAX_ATTEMPTS = 200;
+const JUNCTION_RETRIES = 50;
+const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie']);
+
+export function mergesAtJunction(previous, next) {
+  const pair = previous.slice(-1) + next.slice(0, 1);
+  return MERGING_PAIRS.has(pair.toLowerCase());
+}
+
+export function hasMergingJunction(syllables) {
+  return syllables.some((s, i) => i > 0 && mergesAtJunction(syllables[i - 1], s));
+}
 
 const comboKey = (syllables) => syllables.join('·').toLowerCase();
 
@@ -120,12 +131,23 @@ export function generate(
   const draw = () => {
     const count = 1 + Math.floor(rng() * maxSyllables);
     const candidates = knownWords.filter(
-      (w) => w.syllables.length === count && !seen.has(comboKey(w.syllables)),
+      (w) =>
+        w.syllables.length === count &&
+        !seen.has(comboKey(w.syllables)) &&
+        !hasMergingJunction(w.syllables),
     );
     if (candidates.length > 0 && rng() < realRatio) {
       return { syllables: pick(candidates, rng).syllables, real: true };
     }
-    const syllables = Array.from({ length: count }, () => makeSyllable(pools, rng));
+    const syllables = [];
+    for (let i = 0; i < count; i++) {
+      let syllable = makeSyllable(pools, rng);
+      for (let retry = 0; retry < JUNCTION_RETRIES && i > 0; retry++) {
+        if (!mergesAtJunction(syllables[i - 1], syllable)) break;
+        syllable = makeSyllable(pools, rng);
+      }
+      syllables.push(syllable);
+    }
     if (rng() < 0.5) syllables[0] = capitalize(syllables[0]);
     return { syllables, real: false };
   };

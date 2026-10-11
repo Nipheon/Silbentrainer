@@ -109,7 +109,7 @@ function showReels(syllables) {
   );
 }
 
-function spin() {
+function spin(animate = true) {
   if (spinning) return;
   const round = generate(known, maxSyllables, words, Math.random, { seen });
   if (!round) return;
@@ -130,7 +130,7 @@ function spin() {
         : `Lies die ${round.syllables.length} Silben. Bereit für die nächste Runde?`;
   };
 
-  if (reducedMotion) {
+  if (reducedMotion || !animate) {
     finish();
     return;
   }
@@ -163,9 +163,7 @@ function showPlay() {
   $('#play').hidden = false;
   const letters = [...known].sort((a, b) => a.localeCompare(b, 'de')).join(', ');
   $('#summary').textContent = `Bekannt: ${letters} · höchstens ${maxSyllables} ${maxSyllables === 1 ? 'Silbe' : 'Silben'}`;
-  showReels(['·']);
-  $('#prompt').textContent = 'Drücke START und lies die Silben.';
-  $('#result').textContent = '';
+  spin(false);
 }
 
 function showSetup() {
@@ -178,7 +176,7 @@ async function init() {
   buildTiles();
   buildMaxChoices();
   $('#go').addEventListener('click', showPlay);
-  $('#start').addEventListener('click', spin);
+  $('#start').addEventListener('click', () => spin());
   $('#back').addEventListener('click', showSetup);
   try {
     const response = await fetch('data/words.json');
