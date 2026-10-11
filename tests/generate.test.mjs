@@ -227,10 +227,10 @@ assert.ok(realFree, 'Tee/See/Aal are served as real words with the option off');
 for (const [a, b] of [['at', 'te'], ['op', 'pe'], ['am', 'ma'], ['en', 'na'], ['Al', 'la']]) {
   assert.ok(doublesConsonant(a, b), `${a} ${b} doubles`);
 }
+assert.ok(doublesConsonant('es', 'se'));
 assert.ok(!doublesConsonant('at', 'se'));
-assert.ok(!doublesConsonant('ab', 'ba'), 'only l, m, n, p, t are avoided');
-assert.ok(!doublesConsonant('as', 'sa'));
-assert.ok(!doublesConsonant('ak', 'ka'));
+for (const c of 'bdfglmnprst') assert.ok(doublesConsonant(`a${c}`, `${c}a`), `${c}${c} is avoided`);
+for (const c of 'hjkvwxzq') assert.ok(!doublesConsonant(`a${c}`, `${c}a`), `${c}${c} does not occur in German, not avoided`);
 assert.ok(!doublesConsonant('ma', 'ma'), 'vowel at the junction is fine');
 assert.ok(!doublesConsonant('mi', 'it'), 'only consonants count as doubled');
 assert.ok(!doublesConsonant('am', 'at'), 'vowel after the consonant is fine');
