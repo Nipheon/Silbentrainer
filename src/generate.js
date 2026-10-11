@@ -3,7 +3,10 @@ export const VOWEL_COMBOS = ['ei', 'au', 'eu', 'äu', 'ie'];
 export const CONSONANTS = [
   'b', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'w', 'z',
 ];
-export const CONSONANT_COMBOS = ['ch', 'sch', 'ck', 'qu'];
+export const CONSONANT_COMBOS = ['ch', 'sch', 'ck', 'qu', 'st', 'sp'];
+
+const ONSET_ONLY = new Set(['qu', 'st', 'sp']);
+const CODA_ONLY = new Set(['ck']);
 
 const ALL_UNITS = [...VOWELS, ...VOWEL_COMBOS, ...CONSONANTS, ...CONSONANT_COMBOS].sort(
   (a, b) => b.length - a.length,
@@ -35,8 +38,8 @@ export function unitPools(known) {
   const has = (unit) => known.has(unit);
   return {
     vowels: [...VOWELS, ...VOWEL_COMBOS].filter(has),
-    onsets: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && u !== 'ck'),
-    codas: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && u !== 'qu'),
+    onsets: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && !CODA_ONLY.has(u)),
+    codas: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && !ONSET_ONLY.has(u)),
   };
 }
 
@@ -60,7 +63,9 @@ export function tokenize(syllable) {
   const tokens = [];
   let i = 0;
   while (i < text.length) {
-    const unit = ALL_UNITS.find((u) => text.startsWith(u, i));
+    const unit = ALL_UNITS.find(
+      (u) => text.startsWith(u, i) && !(i > 0 && (u === 'st' || u === 'sp')),
+    );
     if (!unit) return null;
     tokens.push(unit);
     i += unit.length;

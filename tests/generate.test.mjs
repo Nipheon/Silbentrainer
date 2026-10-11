@@ -45,4 +45,17 @@ for (let i = 0; i < 500; i++) {
   }
 }
 
+assert.deepEqual(tokenize('Stein'), ['st', 'ei', 'n']);
+assert.deepEqual(tokenize('Ast'), ['a', 's', 't'], 'st is a unit only at syllable start');
+assert.ok(syllableIsKnown('Ast', new Set(['a', 's', 't'])));
+assert.ok(!syllableIsKnown('sta', new Set(['a', 's', 't'])), 'initial st needs the st unit');
+assert.ok(syllableIsKnown('sta', new Set(['a', 'st'])));
+
+const withSt = new Set(['a', 'm', 's', 't', 'st', 'sp', 'p']);
+for (let i = 0; i < 1000; i++) {
+  for (const s of generate(withSt, 3, words, rng, 0).syllables) {
+    assert.ok(!/(st|sp)$/i.test(s), 'st/sp never at syllable end');
+  }
+}
+
 console.log('all tests passed');
