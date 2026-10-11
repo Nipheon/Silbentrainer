@@ -155,13 +155,17 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 
 .link {
   display: block;
-  margin: 1rem auto 0;
-  padding: 0.75rem 1rem;
+  margin: 0.25rem auto 0;
+  padding: 0.5rem 1rem;
   font: inherit;
-  color: var(--muted);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
   background: none;
   border: 0;
   text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
   cursor: pointer;
 }
 
@@ -186,7 +190,7 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 .syllable.spinning { opacity: 0.55; }
 
 .prompt { text-align: center; margin: 1rem 0 0; }
-.summary { text-align: center; color: var(--muted); font-size: 0.95rem; margin: 0.5rem 0 0; }
+.summary { text-align: center; color: var(--muted); font-size: 0.95rem; margin: 1.5rem 0 0; }
 
 footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1rem; }
 footer a { color: inherit; }

@@ -7,11 +7,18 @@ import {
 
 export const MAX_CHOICES = [1, 2, 3, 4];
 export const DEFAULT_MAX = 2;
+export const DEFAULT_KNOWN = ['a', 'e', 'i', 'o', 'l', 'm', 's'];
 
 const ALL_UNITS = new Set([...VOWELS, ...VOWEL_COMBOS, ...CONSONANTS, ...CONSONANT_COMBOS]);
 
 export function restoreState(raw) {
-  const state = { saved: false, known: new Set(), max: DEFAULT_MAX, twoLetters: true, avoidDoubled: true };
+  const state = {
+    saved: false,
+    known: new Set(DEFAULT_KNOWN),
+    max: DEFAULT_MAX,
+    twoLetters: true,
+    avoidDoubled: true,
+  };
   let saved;
   try {
     saved = JSON.parse(raw);
@@ -21,6 +28,7 @@ export function restoreState(raw) {
   if (!saved || typeof saved !== 'object') return state;
   state.saved = Array.isArray(saved.known);
   if (Array.isArray(saved.known)) {
+    state.known = new Set();
     for (const unit of saved.known) {
       if (typeof unit === 'string' && ALL_UNITS.has(unit)) state.known.add(unit);
     }
