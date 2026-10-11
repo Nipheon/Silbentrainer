@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
+import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
 
 const words = parseWords(JSON.parse(readFileSync(new URL('../data/words.json', import.meta.url))));
 const known = new Set(['a', 'l', 'm']);
@@ -98,5 +98,23 @@ assert.ok(tally[3] > 7600 && tally[3] < 8400, `80% full length, got ${tally[3]}`
 assert.ok(tally[1] > 800 && tally[2] > 800, 'rest split between shorter counts');
 assert.equal(tally[4], 0);
 assert.ok([...Array(50)].every(() => pickCount(1, rng) === 1));
+
+const rich = new Set(['a', 'e', 'i', 'o', 'u', 'ei', 'au', 'l', 'm', 's', 't', 'sch', 'st', 'ck', 'ch']);
+for (let i = 0; i < 5000; i++) {
+  const r = generate(rich, 4, words, rng, { twoLetters: true, realRatio: 0.5 });
+  for (const s of r.syllables) assert.equal(s.length, 2, `not two letters: ${s}`);
+}
+assert.ok(canGenerate(new Set(['a', 'l']), { twoLetters: true }));
+assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: true }));
+assert.ok(canGenerate(new Set(['ei']), { twoLetters: true }), 'ei is two letters');
+assert.ok(!canGenerate(new Set(['sch', 'a']), { twoLetters: true }), 'sch never fits two letters');
+assert.ok(canGenerate(new Set(['sch', 'a']), { twoLetters: false }));
+assert.ok(wordIsKnown(byText('Mama'), known, { twoLetters: true }));
+assert.ok(!wordIsKnown(byText('Mal'), known, { twoLetters: true }), 'Mal has three letters');
+let threeLetter = 0;
+for (let i = 0; i < 3000; i++) {
+  if (generate(known, 2, words, rng).syllables.some((s) => s.length === 3)) threeLetter++;
+}
+assert.ok(threeLetter > 0, 'longer syllables still possible when the option is off');
 
 console.log('all tests passed');

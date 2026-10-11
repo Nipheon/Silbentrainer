@@ -24,6 +24,7 @@ const TICK_MS = 70;
 
 const known = new Set();
 let maxSyllables = 2;
+let twoLetters = true;
 let words = [];
 let spinning = false;
 const seen = new Set();
@@ -37,6 +38,7 @@ function load() {
     if (saved) {
       saved.known.forEach((unit) => known.add(unit));
       if (MAX_CHOICES.includes(saved.max)) maxSyllables = saved.max;
+      if (typeof saved.twoLetters === 'boolean') twoLetters = saved.twoLetters;
     }
   } catch {
     // no saved state
@@ -45,7 +47,7 @@ function load() {
 
 function save() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ known: [...known], max: maxSyllables }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ known: [...known], max: maxSyllables, twoLetters }));
   } catch {
     // storage unavailable
   }
@@ -90,6 +92,12 @@ function buildMaxChoices() {
   refreshMaxChoices();
 }
 
+function refreshTwoLetters() {
+  $('#two-letters').setAttribute('aria-checked', String(twoLetters));
+  $('#more-sounds').hidden = twoLetters;
+  $('#more-sounds-note').hidden = !twoLetters;
+}
+
 function refreshMaxChoices() {
   document.querySelectorAll('.segment').forEach((button) => {
     button.setAttribute('aria-checked', String(Number(button.textContent) === maxSyllables));
@@ -111,9 +119,9 @@ function showReels(syllables) {
 
 function spin(animate = true) {
   if (spinning) return;
-  const round = generate(known, maxSyllables, words, Math.random, { seen });
+  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters });
   if (!round) return;
-  const pools = unitPools(known);
+  const pools = unitPools(known, { twoLetters });
 
   showReels(round.syllables);
   const spans = [...document.querySelectorAll('#reels .syllable')];
@@ -155,7 +163,7 @@ function spin(animate = true) {
 }
 
 function showPlay() {
-  if (!canGenerate(known)) {
+  if (!canGenerate(known, { twoLetters })) {
     $('#setup-error').hidden = false;
     return;
   }
@@ -175,6 +183,13 @@ async function init() {
   load();
   buildTiles();
   buildMaxChoices();
+  $('#two-letters').addEventListener('click', () => {
+    twoLetters = !twoLetters;
+    refreshTwoLetters();
+    $('#setup-error').hidden = true;
+    save();
+  });
+  refreshTwoLetters();
   $('#go').addEventListener('click', showPlay);
   $('#start').addEventListener('click', () => spin());
   $('#back').addEventListener('click', showSetup);

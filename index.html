@@ -18,12 +18,21 @@
       <div class="tiles" data-group="vowelCombos"></div>
       <h2>Konsonanten</h2>
       <div class="tiles" data-group="consonants"></div>
-      <h2>Weitere Laute</h2>
-      <div class="tiles" data-group="consonantCombos"></div>
-      <p class="hint">sch und ch stehen vorn und hinten, st, sp und qu nur am Silbenanfang, ck nur am Silbenende.</p>
+      <div id="more-sounds">
+        <h2>Weitere Laute</h2>
+        <div class="tiles" data-group="consonantCombos"></div>
+        <p class="hint">sch und ch stehen vorn und hinten, st, sp und qu nur am Silbenanfang, ck nur am Silbenende.</p>
+      </div>
+      <p id="more-sounds-note" class="hint" hidden>Weitere Laute (sch, st, sp usw.) brauchen mehr als zwei Buchstaben pro Silbe. Schalte die Option unten aus, um sie zu nutzen.</p>
 
       <h2>Höchstens so viele Silben</h2>
       <div class="segments" id="max" role="radiogroup" aria-label="Höchstzahl der Silben"></div>
+
+      <h2>Silbenlänge</h2>
+      <button id="two-letters" class="switch" type="button" role="switch" aria-checked="true">
+        <span class="switch-box" aria-hidden="true"></span>
+        Silben bestehen nur aus zwei Buchstaben
+      </button>
 
       <button id="go" class="primary" type="button">Los geht's</button>
       <p id="setup-error" class="error" role="alert" hidden>Wähle mindestens einen Vokal und einen Konsonanten, damit Silben mit mindestens zwei Buchstaben entstehen.</p>

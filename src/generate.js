@@ -34,37 +34,47 @@ function pickWeighted(list, rng) {
   return list[list.length - 1];
 }
 
-export function unitPools(known) {
+export function unitPools(known, { twoLetters = false } = {}) {
   const has = (unit) => known.has(unit);
+  const fits = (unit) => !twoLetters || unit.length === 1;
   return {
+    twoLetters,
     vowels: [...VOWELS, ...VOWEL_COMBOS].filter(has),
-    onsets: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && !CODA_ONLY.has(u)),
-    codas: [...CONSONANTS, ...CONSONANT_COMBOS].filter((u) => has(u) && !ONSET_ONLY.has(u)),
+    onsets: [...CONSONANTS, ...CONSONANT_COMBOS].filter(
+      (u) => has(u) && fits(u) && !CODA_ONLY.has(u),
+    ),
+    codas: [...CONSONANTS, ...CONSONANT_COMBOS].filter(
+      (u) => has(u) && fits(u) && !ONSET_ONLY.has(u),
+    ),
   };
+}
+
+function vowelsFor(pools, shape) {
+  if (shape === 'V') return pools.vowels.filter((v) => v.length > 1);
+  return pools.twoLetters ? pools.vowels.filter((v) => v.length === 1) : pools.vowels;
 }
 
 function feasiblePatterns(pools) {
   return PATTERNS.filter(({ shape }) => {
-    const vowels = shape === 'V' ? pools.vowels.filter((v) => v.length > 1) : pools.vowels;
-    if (vowels.length === 0) return false;
+    if (pools.twoLetters && shape === 'KVK') return false;
+    if (vowelsFor(pools, shape).length === 0) return false;
     if (shape.startsWith('K') && pools.onsets.length === 0) return false;
     if (shape.endsWith('K') && pools.codas.length === 0) return false;
     return true;
   });
 }
 
-export function canGenerate(known) {
-  return feasiblePatterns(unitPools(known)).length > 0;
+export function canGenerate(known, options) {
+  return feasiblePatterns(unitPools(known, options)).length > 0;
 }
 
 export function makeSyllable(pools, rng) {
   const feasible = feasiblePatterns(pools);
   if (feasible.length === 0) return null;
   const { shape } = pickWeighted(feasible, rng);
-  const vowels = shape === 'V' ? pools.vowels.filter((v) => v.length > 1) : pools.vowels;
   let out = '';
   if (shape.startsWith('K')) out += pick(pools.onsets, rng);
-  out += pick(vowels, rng);
+  out += pick(vowelsFor(pools, shape), rng);
   if (shape.endsWith('K')) out += pick(pools.codas, rng);
   return out;
 }
@@ -94,8 +104,10 @@ export function parseWords(entries) {
   return entries.map((entry) => ({ text: entry.replaceAll('·', ''), syllables: entry.split('·') }));
 }
 
-export function wordIsKnown(word, known) {
-  return word.syllables.every((s) => s.length > 1 && syllableIsKnown(s, known));
+export function wordIsKnown(word, known, { twoLetters = false } = {}) {
+  return word.syllables.every(
+    (s) => (twoLetters ? s.length === 2 : s.length > 1) && syllableIsKnown(s, known),
+  );
 }
 
 function capitalize(text) {
@@ -128,12 +140,12 @@ export function generate(
   maxSyllables,
   words,
   rng = Math.random,
-  { realRatio = 0.6, seen = new Set() } = {},
+  { realRatio = 0.6, seen = new Set(), twoLetters = false } = {},
 ) {
-  const pools = unitPools(known);
+  const pools = unitPools(known, { twoLetters });
   if (feasiblePatterns(pools).length === 0) return null;
 
-  const knownWords = words.filter((w) => wordIsKnown(w, known));
+  const knownWords = words.filter((w) => wordIsKnown(w, known, { twoLetters }));
   const draw = () => {
     const count = pickCount(maxSyllables, rng);
     const candidates = knownWords.filter(
