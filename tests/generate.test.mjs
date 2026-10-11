@@ -195,4 +195,31 @@ for (let i = 0; i < 300; i++) {
   assert.ok(!(r.real && r.syllables.join('·') === 'la·ut'), 'word with merging junction served');
 }
 
+// doubled vowels are their own units, available when the two-letter option is off
+assert.deepEqual(tokenize('Tee'), ['t', 'ee']);
+assert.deepEqual(tokenize('Aal'), ['aa', 'l']);
+assert.ok(!syllableIsKnown('tee', new Set(['t', 'e'])), 'ee needs its own unit');
+assert.ok(syllableIsKnown('tee', new Set(['t', 'ee'])));
+assert.ok(wordIsKnown(byText('Tee'), new Set(['t', 'ee'])));
+assert.ok(!wordIsKnown(byText('Tee'), new Set(['t', 'e'])));
+assert.ok(!wordIsKnown(byText('Tee'), new Set(['t', 'ee']), { twoLetters: true }), 'Tee has three letters');
+assert.ok(mergesAtJunction('te', 'er'), 'e + e across syllables would read as ee');
+const free = new Set(['t', 's', 'l', 'ee', 'aa']);
+const seenSyllables = new Set();
+for (let i = 0; i < 3000; i++) {
+  for (const x of generate(free, 2, words, rng, { realRatio: 0, twoLetters: false }).syllables) seenSyllables.add(x.toLowerCase());
+}
+assert.ok(seenSyllables.has('tee') || seenSyllables.has('see'), 'syllables like tee/see appear with the option off');
+const strict = new Set();
+for (let i = 0; i < 3000; i++) {
+  for (const x of generate(free, 2, words, rng, { realRatio: 0, twoLetters: true }).syllables) strict.add(x.toLowerCase());
+}
+assert.ok(![...strict].some((x) => x.length > 2), 'no three-letter syllables with the option on');
+let realFree = false;
+for (let i = 0; i < 2000 && !realFree; i++) {
+  const r = generate(free, 1, words, rng, { realRatio: 1, twoLetters: false });
+  if (r.real && ['Tee', 'See', 'Aal'].includes(r.syllables[0])) realFree = true;
+}
+assert.ok(realFree, 'Tee/See/Aal are served as real words with the option off');
+
 console.log('all tests passed');

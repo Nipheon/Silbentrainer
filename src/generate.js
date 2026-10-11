@@ -1,7 +1,7 @@
 import { isBlocked } from './blocklist.js';
 
 export const VOWELS = ['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü'];
-export const VOWEL_COMBOS = ['ei', 'au', 'eu', 'äu', 'ie'];
+export const VOWEL_COMBOS = ['ei', 'au', 'eu', 'äu', 'ie', 'aa', 'ee', 'oo'];
 export const CONSONANTS = [
   'b', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'w', 'z',
 ];
@@ -126,7 +126,7 @@ export function pickCount(maxSyllables, rng) {
 }
 
 const JUNCTION_RETRIES = 50;
-const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie']);
+const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie', 'aa', 'ee', 'oo']);
 
 export function mergesAtJunction(previous, next) {
   const pair = previous.slice(-1) + next.slice(0, 1);

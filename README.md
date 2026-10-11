@@ -17,9 +17,10 @@ Dann `http://localhost:8000` öffnen. Tests: `npm test` (Node 20 oder neuer).
 
 ## Regeln
 
-- Silben bestehen standardmäßig aus genau zwei Buchstaben (Option abschaltbar).
+- Silben bestehen standardmäßig aus genau zwei Buchstaben. Ohne diese Option sind
+  längere Silben möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
 - Jede Silbe hat einen Vokal; `st`, `sp`, `qu` nur am Silbenanfang, `ck` nur am Ende.
-- Am Silbenübergang entstehen kein `ei`, `ai`, `au`, `eu`, `äu` und `ie`.
+- Am Silbenübergang entstehen kein `ei`, `ai`, `au`, `eu`, `äu`, `ie`, `aa`, `ee` und `oo`.
 - Eine bereits gezeigte Kombination kommt in derselben Sitzung nicht wieder.
 - Erfundene Silben laufen durch eine Sperrliste (`src/blocklist.js`).
 - Echte Wörter stehen in `data/words.json`, von Hand mit Sprechsilben geschrieben.
