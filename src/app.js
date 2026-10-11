@@ -47,6 +47,7 @@ function load() {
   known = state.known;
   maxSyllables = state.max;
   twoLetters = state.twoLetters;
+  return state.saved;
 }
 
 function save() {
@@ -91,7 +92,6 @@ function buildTiles() {
         else known.add(unit);
         tile.setAttribute('aria-pressed', String(known.has(unit)));
         $('#setup-error').hidden = true;
-        save();
       });
       container.append(tile);
     }
@@ -102,7 +102,6 @@ function selectMax(n, { focus = false } = {}) {
   maxSyllables = n;
   refreshMaxChoices();
   if (focus) document.querySelector('.segment[tabindex="0"]').focus();
-  save();
 }
 
 function buildMaxChoices() {
@@ -212,6 +211,7 @@ async function showPlay() {
     showSetupError();
     return;
   }
+  save();
   await wordsReady;
   cancelSpin();
   $('#setup').hidden = true;
@@ -245,8 +245,7 @@ let wordsReady = Promise.resolve();
 
 function init() {
   $('#load-error').hidden = true;
-  $('#setup').hidden = false;
-  load();
+  const hasSavedConfig = load();
   buildTiles();
   buildMaxChoices();
   refreshTwoLetters();
@@ -254,12 +253,13 @@ function init() {
     twoLetters = !twoLetters;
     refreshTwoLetters();
     $('#setup-error').hidden = true;
-    save();
   });
   $('#go').addEventListener('click', showPlay);
   $('#start').addEventListener('click', () => spin());
   $('#back').addEventListener('click', showSetup);
   wordsReady = loadWords();
+  if (hasSavedConfig && canGenerate(known, { twoLetters })) showPlay();
+  else $('#setup').hidden = false;
 }
 
 init();

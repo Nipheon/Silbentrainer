@@ -2,12 +2,16 @@ import assert from 'node:assert/strict';
 import { describeSelection, restoreState } from '../src/state.js';
 
 const empty = restoreState(null);
+assert.equal(empty.saved, false, 'nothing stored means no saved configuration');
 assert.equal(empty.known.size, 0);
 assert.equal(empty.max, 2);
 assert.equal(empty.twoLetters, true);
 
+assert.equal(restoreState('not json').saved, false);
+assert.equal(restoreState('{"max":3}').saved, false, 'no known list means no configuration');
 const good = restoreState(JSON.stringify({ known: ['a', 'l', 'sch'], max: 3, twoLetters: false }));
 assert.deepEqual([...good.known].sort(), ['a', 'l', 'sch']);
+assert.equal(good.saved, true);
 assert.equal(good.max, 3);
 assert.equal(good.twoLetters, false);
 

@@ -15,6 +15,12 @@ python3 -m http.server 8000
 
 Dann `http://localhost:8000` öffnen. Tests: `npm test` (Node 20 oder neuer).
 
+## Gespeicherte Einstellung
+
+„Los geht's“ speichert die Auswahl im Browser (`localStorage`, nur lokal, keine Übertragung).
+Beim nächsten Aufruf startet die Seite direkt mit den Walzen; „Buchstaben ändern“ führt
+zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Auswahlseite.
+
 ## Regeln
 
 - Silben bestehen standardmäßig aus genau zwei Buchstaben. Ohne diese Option sind
