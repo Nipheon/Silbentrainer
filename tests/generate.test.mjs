@@ -259,4 +259,15 @@ for (let i = 0; i < 400; i++) {
 }
 assert.ok(rollerOff, 'Roller is served when the option is off');
 
+// only the first letter of the first syllable may be uppercase, with every letter known, real words included
+const everything = new Set(['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü', 'ei', 'au', 'eu', 'äu', 'ie', 'aa', 'ee', 'oo',
+  'b', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'w', 'z', 'ch', 'sch', 'ck', 'qu', 'st', 'sp']);
+for (const twoLetters of [true, false]) {
+  for (let i = 0; i < 4000; i++) {
+    const r = generate(everything, 4, words, rng, { twoLetters, avoidDoubled: true });
+    const text = r.syllables.join('');
+    assert.ok(text.slice(1) === text.slice(1).toLowerCase(), `uppercase after the first letter: ${r.syllables.join(' ')}`);
+  }
+}
+
 console.log('all tests passed');
