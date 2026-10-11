@@ -44,7 +44,7 @@ export function describeSelection(known, max, twoLetters, avoidDoubled = false) 
     .filter((unit) => !(twoLetters && CONSONANT_COMBOS.includes(unit)))
     .sort((a, b) => a.localeCompare(b, 'de'));
   const syllables = max === 1 ? 'Silbe' : 'Silben';
-  const mode = twoLetters ? 'zwei Buchstaben pro Silbe' : 'Silben beliebig lang';
+  const mode = twoLetters ? 'ein oder zwei Buchstaben pro Silbe' : 'Silben beliebig lang';
   const doubles = avoidDoubled ? ' · ohne Doppelkonsonanten' : '';
   return `Bekannt: ${units.join(', ')} · höchstens ${max} ${syllables} · ${mode}${doubles}`;
 }

@@ -105,16 +105,33 @@ assert.equal(tally[4], 0);
 assert.ok([...Array(50)].every(() => pickCount(1, rng) === 1));
 
 const rich = new Set(['a', 'e', 'i', 'o', 'u', 'ei', 'au', 'l', 'm', 's', 't', 'sch', 'st', 'ck', 'ch']);
+let oneLetter = 0;
+let twoLetter = 0;
 for (let i = 0; i < 5000; i++) {
   const r = generate(rich, 4, words, rng, { twoLetters: true, realRatio: 0.5 });
-  for (const s of r.syllables) assert.equal(s.length, 2, `not two letters: ${s}`);
+  for (const s of r.syllables) {
+    assert.ok(s.length === 1 || s.length === 2, `not one or two letters: ${s}`);
+    if (s.length === 1) oneLetter++;
+    else twoLetter++;
+  }
 }
+assert.ok(oneLetter > 100, `single-letter syllables such as 'O ma' appear (${oneLetter})`);
+assert.ok(twoLetter > oneLetter, 'two-letter syllables stay the norm');
 assert.ok(canGenerate(new Set(['a', 'l']), { twoLetters: true }));
-assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: true }));
+assert.ok(canGenerate(new Set(['a', 'e']), { twoLetters: true }), 'a lone vowel is a syllable in this mode');
+assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: false }), 'never a single letter without the option');
+assert.ok(!canGenerate(new Set(['l', 'm']), { twoLetters: true }), 'no vowel, no syllable');
 assert.ok(canGenerate(new Set(['ei']), { twoLetters: true }), 'ei is two letters');
-assert.ok(!canGenerate(new Set(['sch', 'a']), { twoLetters: true }), 'sch never fits two letters');
+for (let i = 0; i < 500; i++) {
+  for (const x of generate(new Set(['sch', 'a', 'l']), 3, words, rng, { twoLetters: true, realRatio: 0 }).syllables) {
+    assert.ok(!x.toLowerCase().includes('sch'), 'sch never fits in one or two letters');
+  }
+}
 assert.ok(canGenerate(new Set(['sch', 'a']), { twoLetters: false }));
 assert.ok(wordIsKnown(byText('Mama'), known, { twoLetters: true }));
+assert.ok(wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a']), { twoLetters: true }), 'O·ma has a one-letter syllable');
+assert.ok(!wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a'])), 'O·ma needs the option');
+assert.ok(!wordIsKnown(byText('Abend'), new Set(['a', 'b', 'e', 'n', 'd']), { twoLetters: true }), 'bend has four letters');
 assert.ok(!wordIsKnown(byText('Mal'), known, { twoLetters: true }), 'Mal has three letters');
 let threeLetter = 0;
 for (let i = 0; i < 3000; i++) {
@@ -216,6 +233,7 @@ for (let i = 0; i < 3000; i++) {
   for (const x of generate(free, 2, words, rng, { realRatio: 0, twoLetters: true }).syllables) strict.add(x.toLowerCase());
 }
 assert.ok(![...strict].some((x) => x.length > 2), 'no three-letter syllables with the option on');
+
 let realFree = false;
 for (let i = 0; i < 2000 && !realFree; i++) {
   const r = generate(free, 1, words, rng, { realRatio: 1, twoLetters: false });
@@ -294,4 +312,14 @@ for (let i = 0; i < 3000; i++) {
   assert.ok(!hasMergingJunction(r.syllables), `vowels meet: ${r.syllables.join(' ')}`);
 }
 
+// 'O·ma' is served as a real word with the option on, never with it off
+const omaKnown = new Set(['o', 'm', 'a']);
+let omaOn = false;
+for (let i = 0; i < 600; i++) {
+  const on = generate(omaKnown, 2, words, rng, { realRatio: 1, twoLetters: true, avoidDoubled: true });
+  if (on.real && on.syllables.join('') === 'Oma') omaOn = true;
+  const off = generate(omaKnown, 2, words, rng, { realRatio: 1, twoLetters: false });
+  assert.ok(!(off.real && off.syllables.join('') === 'Oma'), 'Oma served without the option');
+}
+assert.ok(omaOn, 'Oma is served with the option on');
 console.log('all tests passed');

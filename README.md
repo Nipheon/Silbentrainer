@@ -23,8 +23,8 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 
 ## Regeln
 
-- Silben bestehen standardmäßig aus genau zwei Buchstaben. Ohne diese Option sind
-  längere Silben möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
+- Silben bestehen standardmäßig aus einem oder zwei Buchstaben (`O ma`, `la`, `al`, `ei`).
+  Ohne diese Option haben Silben nie einen einzelnen Buchstaben, sind aber länger möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
 - Jede Silbe hat einen Vokal; `st`, `sp`, `qu` nur am Silbenanfang, `ck` nur am Ende.
 - Am Silbenübergang folgen nie zwei Vokale aufeinander (nicht `Mi il`, `Lo am`, `Le im`).
 - Optional (Standard an): keine Doppelung von `b d f g k l m n p r s t z` am Silbenübergang (nicht `at te`, `am ma`, `es se`, `ak ku`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt.

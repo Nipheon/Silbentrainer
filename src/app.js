@@ -22,8 +22,9 @@ const SPIN_MS = 600;
 const SPIN_STAGGER_MS = 350;
 const TICK_MS = 70;
 const ANNOUNCE_DELAY_MS = 60;
-const SETUP_ERROR =
-  'Wähle mindestens einen Vokal und einen Konsonanten, damit Silben mit mindestens zwei Buchstaben entstehen.';
+const NO_VOWEL_ERROR = 'Wähle mindestens einen Vokal.';
+const NO_CONSONANT_ERROR =
+  'Wähle zusätzlich einen Konsonanten oder eine Vokalverbindung, damit Silben mit mindestens zwei Buchstaben entstehen.';
 
 let known = new Set();
 let maxSyllables = 2;
@@ -76,7 +77,9 @@ function showSetupError() {
   error.hidden = false;
   error.textContent = '';
   setTimeout(() => {
-    error.textContent = SETUP_ERROR;
+    error.textContent = [...known].some((u) => VOWELS.includes(u) || VOWEL_COMBOS.includes(u))
+      ? NO_CONSONANT_ERROR
+      : NO_VOWEL_ERROR;
   }, ANNOUNCE_DELAY_MS);
 }
 

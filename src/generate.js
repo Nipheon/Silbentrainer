@@ -51,8 +51,10 @@ export function unitPools(known, { twoLetters = false } = {}) {
   };
 }
 
+// twoLetters: every syllable has one or two letters (o, ma, al, ei), so a lone vowel is a syllable.
+// Without it, a syllable never has a single letter and may be longer than two.
 function vowelsFor(pools, shape) {
-  if (shape === 'V') return pools.vowels.filter((v) => v.length > 1);
+  if (shape === 'V') return pools.twoLetters ? pools.vowels : pools.vowels.filter((v) => v.length > 1);
   return pools.twoLetters ? pools.vowels.filter((v) => v.length === 1) : pools.vowels;
 }
 
@@ -108,7 +110,7 @@ export function parseWords(entries) {
 
 export function wordIsKnown(word, known, { twoLetters = false } = {}) {
   return word.syllables.every(
-    (s) => (twoLetters ? s.length === 2 : s.length > 1) && syllableIsKnown(s, known),
+    (s) => (twoLetters ? s.length <= 2 : s.length > 1) && syllableIsKnown(s, known),
   );
 }
 

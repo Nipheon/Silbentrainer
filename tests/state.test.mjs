@@ -39,7 +39,7 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'] })).known.size, 1, 'a sa
 
 assert.equal(
   describeSelection(new Set(['l', 'a', 'sch', 'ei']), 1, true),
-  'Bekannt: a, ei, l · höchstens 1 Silbe · zwei Buchstaben pro Silbe',
+  'Bekannt: a, ei, l · höchstens 1 Silbe · ein oder zwei Buchstaben pro Silbe',
   'two-letter mode hides consonant combos and names the mode',
 );
 assert.equal(
@@ -51,7 +51,7 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'], avoidDoubled: false }))
 assert.equal(restoreState(JSON.stringify({ known: ['a'], avoidDoubled: 'no' })).avoidDoubled, true, 'non-boolean falls back');
 assert.equal(
   describeSelection(new Set(['a', 'm']), 2, true, true),
-  'Bekannt: a, m · höchstens 2 Silben · zwei Buchstaben pro Silbe · ohne Doppelkonsonanten',
+  'Bekannt: a, m · höchstens 2 Silben · ein oder zwei Buchstaben pro Silbe · ohne Doppelkonsonanten',
 );
 
 console.log('state tests passed');
