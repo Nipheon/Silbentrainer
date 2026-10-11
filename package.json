@@ -1,0 +1,6 @@
+{
+  "name": "silbentrainer",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node tests/generate.test.mjs" }
+}

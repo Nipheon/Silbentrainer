@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Silbentrainer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <section id="setup" class="card">
+      <h1>Welche Buchstaben sind schon bekannt?</h1>
+      <p class="lead">Tippe die Buchstaben an, die das Kind schon kennt, und wähle, wie viele Silben es höchstens lesen soll.</p>
+
+      <h2>Vokale</h2>
+      <div class="tiles" data-group="vowels"></div>
+      <h2>Vokalverbindungen</h2>
+      <div class="tiles" data-group="vowelCombos"></div>
+      <h2>Konsonanten</h2>
+      <div class="tiles" data-group="consonants"></div>
+      <h2>Buchstabenverbindungen</h2>
+      <div class="tiles" data-group="consonantCombos"></div>
+      <p class="hint">ck steht nur am Silbenende, qu nur am Silbenanfang.</p>
+
+      <h2>Höchstens so viele Silben</h2>
+      <div class="segments" id="max" role="radiogroup" aria-label="Höchstzahl der Silben"></div>
+
+      <button id="go" class="primary" type="button">Los geht's</button>
+      <p id="setup-error" class="error" role="alert" hidden>Wähle mindestens einen Vokal.</p>
+    </section>
+
+    <section id="play" class="card" hidden>
+      <div id="reels" class="reels" aria-hidden="true"></div>
+      <p id="result" class="sr-only" aria-live="polite"></p>
+      <button id="start" class="primary" type="button">START</button>
+      <p id="prompt" class="prompt">Drücke START und lies die Silben.</p>
+      <p id="summary" class="summary"></p>
+      <button id="back" class="link" type="button">Buchstaben ändern</button>
+    </section>
+  </main>
+  <footer>Schrift: Andika (SIL Open Font License)</footer>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
