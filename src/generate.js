@@ -126,11 +126,13 @@ export function pickCount(maxSyllables, rng) {
 }
 
 const JUNCTION_RETRIES = 50;
-const MERGING_PAIRS = new Set(['ei', 'ai', 'au', 'eu', 'äu', 'ie', 'aa', 'ee', 'oo']);
+const VOWEL_LETTERS = new Set(['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü']);
 
 export function mergesAtJunction(previous, next) {
-  const pair = previous.slice(-1) + next.slice(0, 1);
-  return MERGING_PAIRS.has(pair.toLowerCase());
+  return (
+    VOWEL_LETTERS.has(previous.slice(-1).toLowerCase()) &&
+    VOWEL_LETTERS.has(next.slice(0, 1).toLowerCase())
+  );
 }
 
 export function hasMergingJunction(syllables) {

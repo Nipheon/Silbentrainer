@@ -270,4 +270,28 @@ for (const twoLetters of [true, false]) {
   }
 }
 
+// no two vowels meet across a syllable junction (Mi il, Lo am), whichever vowels they are
+for (const a of 'aeiouäöü') {
+  for (const b of 'aeiouäöü') assert.ok(mergesAtJunction(`m${a}`, `${b}l`), `${a} + ${b} must count as vowels meeting`);
+}
+assert.ok(mergesAtJunction('Mi', 'il'));
+assert.ok(mergesAtJunction('Lo', 'am'));
+assert.ok(!mergesAtJunction('Mil', 'am'), 'consonant before the vowel is fine');
+assert.ok(!mergesAtJunction('lo', 'ma'));
+assert.ok(!mergesAtJunction('la', 'sch'.slice(0, 1) + 'u'));
+const lowVowels = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']);
+for (const twoLetters of [true, false]) {
+  for (const avoidDoubled of [true, false]) {
+    for (let i = 0; i < 3000; i++) {
+      const r = generate(lowVowels, 4, words, rng, { twoLetters, avoidDoubled, realRatio: 0.4 });
+      assert.ok(!hasMergingJunction(r.syllables), `vowels meet: ${r.syllables.join(' ')} (twoLetters=${twoLetters})`);
+    }
+  }
+}
+const mixedUmlaut = new Set(['ä', 'ö', 'ü', 'u', 'a', 'l', 'n', 'ei', 'au']);
+for (let i = 0; i < 3000; i++) {
+  const r = generate(mixedUmlaut, 3, words, rng, { realRatio: 0, avoidDoubled: true });
+  assert.ok(!hasMergingJunction(r.syllables), `vowels meet: ${r.syllables.join(' ')}`);
+}
+
 console.log('all tests passed');
