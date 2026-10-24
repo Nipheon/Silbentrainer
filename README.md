@@ -40,3 +40,8 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 - Schrift **Grundschrift von Christian Urff**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
   Quelle: <https://urff.app/grundschrift/>, Lizenztext in `fonts/grundschrift/LICENSE.md`.
 - Ersatzschrift **Andika** (SIL), SIL Open Font License 1.1, siehe `fonts/OFL.txt`.
+
+## KI-Hinweis
+
+Der Code wurde mit Unterstützung von KI geschrieben: Claude (Anthropic, Modell
+Claude Sonnet 5.5). Der Autor hat die Ergebnisse geprüft und steuert das Projekt.
