@@ -17,7 +17,7 @@ if (!extractPath || !frequencyPath || !outPath) {
   console.error('usage: node scripts/build-words.mjs <de-extract.jsonl.gz> <frequency.txt> <out.json> [maxRank]');
   process.exit(1);
 }
-const MAX_RANK = Number(maxRankArg ?? 15000);
+const MAX_RANK = Number(maxRankArg ?? 3000);
 const MAX_SYLLABLES = 4;
 const MIN_LETTERS = 3; // shorter real words (ja, am, Ei, Ohr) come from the hand-written list; Wiktionary has letter names and abbreviations here
 const POS = new Set(['noun', 'verb', 'adj', 'adv', 'num', 'intj', 'conj', 'prep', 'pron', 'det']);

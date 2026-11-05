@@ -37,9 +37,9 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 
 ## Wörterliste
 
-`data/words.json` enthält etwa 6000 echte Wörter mit Sprechsilben (`Ba·na·ne`, `O·ma`):
+`data/words.json` enthält etwa 1700 echte Wörter mit Sprechsilben (`Ba·na·ne`, `O·ma`):
 156 von Hand geschriebene (`scripts/handwritten-words.json`, sie haben Vorrang) und
-häufige Wörter aus dem deutschen Wiktionary. Beim Bauen werden Wörter ausgesondert, die für Kinder
+die 3000 häufigsten Wörter des deutschen Wiktionary (soweit kindgeeignet). Beim Bauen werden Wörter ausgesondert, die für Kinder
 ungeeignet sind (`scripts/word-exclusions.txt`), außerdem Namen, Abkürzungen, Wörter unter drei Buchstaben und
 Wörter mit zwei aufeinanderfolgenden Vokalen am Silbenübergang.
 
