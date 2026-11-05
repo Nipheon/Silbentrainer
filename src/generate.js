@@ -257,6 +257,8 @@ export function generate(
       }
       syllables.push(syllable);
     }
+    // No syllable could follow (only vowel combinations known, for example): drop the round instead of showing it.
+    if (syllables.some((syllable, i) => i > 0 && junctionIsBad(syllables[i - 1], syllable))) return null;
     if (rng() < 0.5) syllables[0] = capitalize(syllables[0]);
     return { syllables, real: false };
   };
@@ -266,7 +268,7 @@ export function generate(
   const search = () => {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const round = draw();
-      if (!seen.has(comboKey(round.syllables)) && acceptable(round)) return round;
+      if (round && !seen.has(comboKey(round.syllables)) && acceptable(round)) return round;
     }
     return null;
   };
@@ -281,7 +283,7 @@ export function generate(
   if (!round) {
     for (let attempt = 0; attempt < MAX_ATTEMPTS && !round; attempt++) {
       const candidate = draw();
-      if (acceptable(candidate)) round = candidate;
+      if (candidate && acceptable(candidate)) round = candidate;
     }
   }
   if (!round) return null;

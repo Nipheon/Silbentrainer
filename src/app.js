@@ -22,6 +22,8 @@ const SPIN_MS = 600;
 const SPIN_STAGGER_MS = 350;
 const TICK_MS = 70;
 const ANNOUNCE_DELAY_MS = 60;
+const WORDS_WAIT_MS = 1500;
+const WORDS_TIMEOUT_MS = 8000;
 const NO_VOWEL_ERROR = 'Wähle mindestens einen Vokal.';
 const NO_CONSONANT_ERROR =
   'Wähle zusätzlich einen Konsonanten oder eine Vokalverbindung, damit Silben mit mindestens zwei Buchstaben entstehen.';
@@ -227,11 +229,11 @@ async function showPlay() {
     return;
   }
   save();
-  await wordsReady;
   cancelSpin();
   $('#setup').hidden = true;
   $('#play').hidden = false;
   $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate, spacing);
+  await Promise.race([wordsReady, new Promise((resolve) => setTimeout(resolve, WORDS_WAIT_MS))]);
   spin(false);
   $('#start').focus();
 }
@@ -245,7 +247,7 @@ function showSetup() {
 
 async function loadWords() {
   try {
-    const response = await fetch('data/words.json');
+    const response = await fetch('data/words.json', { signal: AbortSignal.timeout(WORDS_TIMEOUT_MS) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const entries = await response.json();
     if (!Array.isArray(entries)) throw new Error('not a list');
