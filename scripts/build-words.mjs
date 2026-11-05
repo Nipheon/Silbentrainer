@@ -47,7 +47,7 @@ function splitLeadingVowel(parts) {
   if (!tokens || tokens.length < 3) return parts;
   const [first, second, third] = tokens;
   if (!isVowelUnit(first) || isVowelUnit(second) || !isVowelUnit(third)) return parts;
-  return [first, parts[0].slice(first.length), ...parts.slice(1)];
+  return [parts[0].slice(0, first.length), parts[0].slice(first.length), ...parts.slice(1)];
 }
 
 const exclusions = readFileSync(join(here, 'word-exclusions.txt'), 'utf8')
