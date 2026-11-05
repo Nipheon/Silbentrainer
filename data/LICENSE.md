@@ -7,6 +7,9 @@
 The file is licensed under **Creative Commons Attribution-ShareAlike 4.0 International**
 (CC BY-SA 4.0): <https://creativecommons.org/licenses/by-sa/4.0/>.
 
+Word selection used frequency ranks from the FrequencyWords list by Hermit Dave
+(<https://github.com/hermitdave/FrequencyWords>, built from OpenSubtitles); no frequency data is included in this file.
+
 Changes: filtered by word frequency and for child suitability, syllable divisions adapted to
 reading syllables (a single leading vowel is split off: `Oma` becomes `O·ma`).
 

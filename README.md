@@ -25,8 +25,8 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 
 - Silben bestehen standardmäßig aus einem oder zwei Buchstaben (`O ma`, `la`, `al`, `ei`).
   Ohne diese Option haben Silben nie einen einzelnen Buchstaben, sind aber länger möglich, auch mit `sch`, `ch`, `ck`, `st`, `sp`, `qu` und Doppelvokalen (`Tee`, `See`, `Aal`).
-- Jede Silbe hat einen Vokal; `st`, `sp`, `qu` nur am Silbenanfang, `ck` nur am Ende.
-- Am Silbenübergang folgen nie zwei Vokale aufeinander (nicht `Mi il`, `Lo am`, `Le im`).
+- Jede Silbe hat einen Vokal; in erfundenen Silben stehen `st`, `sp`, `qu` nur am Silbenanfang und `ck` nur am Ende. Echte Wörter folgen ihrer üblichen Trennung (`Zu·cker`, `E·cke`).
+- Am Silbenübergang folgen nie zwei Vokale aufeinander (nicht `Mi il`, `Lo am`, `Le im`). Lässt eine Auswahl keine zweite Silbe zu (zum Beispiel nur `ei` und `au`), gibt es nur einsilbige Runden.
 - Eine Runde besteht nie aus nur einem Buchstaben (`O ma` ja, `E` allein nein).
 - Optional (Standard aus): Vokal und Konsonant wechseln sich ab, auch zwischen Silben (nicht `al ma`) und in echten Wörtern (nicht `Kis·te`, `Hand`).
 - Optional (Standard an): keine Doppelung von `b d f g k l m n p r s t z` am Silbenübergang (nicht `at te`, `am ma`, `es se`, `ak ku`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt.
@@ -37,11 +37,14 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 
 ## Wörterliste
 
-`data/words.json` enthält etwa 1700 echte Wörter mit Sprechsilben (`Ba·na·ne`, `O·ma`):
-156 von Hand geschriebene (`scripts/handwritten-words.json`, sie haben Vorrang) und
-die 3000 häufigsten Wörter des deutschen Wiktionary (soweit kindgeeignet). Beim Bauen werden Wörter ausgesondert, die für Kinder
-ungeeignet sind (`scripts/word-exclusions.txt`), außerdem Namen, Abkürzungen, Wörter unter drei Buchstaben und
-Wörter mit zwei aufeinanderfolgenden Vokalen am Silbenübergang.
+`data/words.json` enthält etwa 1500 echte Wörter mit Sprechsilben (`Ba·na·ne`, `O·ma`):
+155 von Hand geschriebene (`scripts/handwritten-words.json`, sie haben Vorrang) und
+die 3000 häufigsten Wörter des deutschen Wiktionary, soweit sie kindgeeignet sind.
+Beim Bauen entfallen:
+
+- Wörter aus `scripts/word-exclusions.txt` (Gewalt, Sex, Schimpfwörter, Alkohol und Drogen, Militär, Politik, Religion, Namen, englische Wörter), von Hand gepflegt und nach einer Durchsicht durch drei unabhängige Prüfer ergänzt.
+- Nominalisierte Formen (`Jetzt`, `Viel`, `Aus`: großgeschrieben, obwohl es das kleingeschriebene Wort gibt) und Partizipien (`ge·macht`). Gute Nomen mit Zwilling (`Weg`, `Licht`, `Rot`) stehen in einer Rettungsliste im Skript.
+- Wörter unter drei Buchstaben und Wörter mit zwei aufeinanderfolgenden Vokalen am Silbenübergang. Die Handliste enthält dagegen auch kurze Wörter wie `ja`, `am`, `Ei`.
 
 Neu bauen (Eingaben liegen nicht im Repo):
 
@@ -54,7 +57,7 @@ node scripts/build-words.mjs <de-extract.jsonl.gz> <de_50k.txt> data/words.json
 
 ## Lizenzen
 
-- Code: MIT, siehe `LICENSE`.
+- Code: MIT, siehe `LICENSE` (ausgenommen `data/words.json`, siehe unten).
 - Schrift **Grundschrift von Christian Urff**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
   Quelle: <https://urff.app/grundschrift/>, Lizenztext in `fonts/grundschrift/LICENSE.md`.
 - Ersatzschrift **Andika** (SIL), SIL Open Font License 1.1, siehe `fonts/OFL.txt`.

@@ -62,7 +62,6 @@ assert.equal(
   'Bekannt: a, m · höchstens 2 Silben · ein oder zwei Buchstaben pro Silbe · ohne Doppelkonsonanten · Vokal und Konsonant im Wechsel',
 );
 
-console.log('state tests passed');
 
 assert.equal(empty.spacing, 3, 'spacing defaults to the widest step');
 assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: 1 })).spacing, 1);
@@ -71,3 +70,5 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: 7 })).spacing,
 assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: '1' })).spacing, 3, 'non-number spacing falls back');
 assert.ok(!describeSelection(new Set(['a']), 2, true).includes('Abstand'), 'default spacing is not mentioned');
 assert.ok(describeSelection(new Set(['a']), 2, true, true, false, 1).includes('Abstand 1'));
+
+console.log('state tests passed');

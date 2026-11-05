@@ -390,7 +390,6 @@ for (let i = 0; i < 3000; i++) {
 }
 assert.ok(singleInside > 50, `one-letter syllables still appear inside longer rounds (${singleInside})`);
 
-console.log('all tests passed');
 
 {
   const seededRng = (() => {
@@ -408,3 +407,21 @@ console.log('all tests passed');
   }
   assert.ok(real / 400 > 0.6 && real / 400 < 0.9, `real words in about 75% of rounds by default when a word fits, got ${real / 400}`);
 }
+
+for (const [name, known, options] of [
+  ['vowel combinations only', ['ei', 'au'], {}],
+  ['combinations and a coda-only consonant', ['ei', 'ck', 'a'], {}],
+  ['two letters, combinations and unusable onset', ['ei', 'ie', 'b'], { twoLetters: true }],
+  ['one combination, all options', ['eu'], { twoLetters: true, avoidDoubled: true, alternate: true }],
+  ['alternate without single vowels', ['a', 'm', 'l', 's'], { alternate: true }],
+]) {
+  const seen = new Set();
+  for (let i = 0; i < 300; i++) {
+    const r = generate(new Set(known), 3, [], rng, { seen, ...options });
+    assert.ok(r, `${name}: a round is always found`);
+    assert.ok(!hasMergingJunction(r.syllables), `${name}: merging junction in ${r.syllables.join(' ')}`);
+    if (options.alternate) assert.ok(alternates(r.syllables), `${name}: not alternating: ${r.syllables.join(' ')}`);
+  }
+}
+
+console.log('all tests passed');
