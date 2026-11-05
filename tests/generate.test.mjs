@@ -391,3 +391,20 @@ for (let i = 0; i < 3000; i++) {
 assert.ok(singleInside > 50, `one-letter syllables still appear inside longer rounds (${singleInside})`);
 
 console.log('all tests passed');
+
+{
+  const seededRng = (() => {
+    let seed = 7;
+    return () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+  })();
+  const pool = parseWords(['Mal', 'Sol', 'Los', 'Lamm']);
+  const known = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']);
+  let real = 0;
+  for (let i = 0; i < 400; i++) {
+    if (generate(known, 1, pool, seededRng, { twoLetters: false }).real) real += 1;
+  }
+  assert.ok(real / 400 > 0.6 && real / 400 < 0.9, `real words in about 75% of rounds by default when a word fits, got ${real / 400}`);
+}

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/generate.test.mjs && node tests/state.test.mjs"
+    "test": "node tests/generate.test.mjs && node tests/state.test.mjs && node tests/words.test.mjs"
   },
   "license": "MIT"
 }
