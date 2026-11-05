@@ -32,7 +32,25 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 - Optional (Standard an): keine Doppelung von `b d f g k l m n p r s t z` am Silbenübergang (nicht `at te`, `am ma`, `es se`, `ak ku`); gilt auch für echte Wörter wie `Rol·ler`. `h j v w` werden im Deutschen nicht verdoppelt.
 - Eine bereits gezeigte Kombination kommt in derselben Sitzung nicht wieder.
 - Erfundene Silben laufen durch eine Sperrliste (`src/blocklist.js`).
-- Echte Wörter stehen in `data/words.json`, von Hand mit Sprechsilben geschrieben.
+- Echte Wörter werden bevorzugt: Gibt es zur Auswahl ein passendes, noch nicht gezeigtes Wort, besteht eine Runde in drei von vier Fällen daraus (`realRatio` in `src/generate.js`).
+- Der Abstand zwischen den Silben hat drei Stufen: 1 kein Abstand, 2 halber, 3 voller Abstand (Standard).
+
+## Wörterliste
+
+`data/words.json` enthält etwa 1700 echte Wörter mit Sprechsilben (`Ba·na·ne`, `O·ma`):
+156 von Hand geschriebene (`scripts/handwritten-words.json`, sie haben Vorrang) und
+die 3000 häufigsten Wörter des deutschen Wiktionary (soweit kindgeeignet). Beim Bauen werden Wörter ausgesondert, die für Kinder
+ungeeignet sind (`scripts/word-exclusions.txt`), außerdem Namen, Abkürzungen, Wörter unter drei Buchstaben und
+Wörter mit zwei aufeinanderfolgenden Vokalen am Silbenübergang.
+
+Neu bauen (Eingaben liegen nicht im Repo):
+
+```
+node scripts/build-words.mjs <de-extract.jsonl.gz> <de_50k.txt> data/words.json
+```
+
+- `de-extract.jsonl.gz`: Wiktionary-Auszug von <https://kaikki.org/dictionary/rawdata.html> (Deutsch).
+- `de_50k.txt`: Worthäufigkeitsliste aus <https://github.com/hermitdave/FrequencyWords> (nur zum Auswählen häufiger Wörter benutzt, nicht weitergegeben).
 
 ## Lizenzen
 
@@ -40,6 +58,8 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 - Schrift **Grundschrift von Christian Urff**, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
   Quelle: <https://urff.app/grundschrift/>, Lizenztext in `fonts/grundschrift/LICENSE.md`.
 - Ersatzschrift **Andika** (SIL), SIL Open Font License 1.1, siehe `fonts/OFL.txt`.
+- Wörterliste `data/words.json`: enthält Wörter und Silbentrennungen aus dem [deutschen Wiktionary](https://de.wiktionary.org),
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), siehe `data/LICENSE.md`.
 
 ## KI-Hinweis
 

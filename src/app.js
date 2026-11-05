@@ -9,7 +9,7 @@ import {
   parseWords,
   unitPools,
 } from './generate.js';
-import { MAX_CHOICES, describeSelection, restoreState } from './state.js';
+import { MAX_CHOICES, SPACING_CHOICES, describeSelection, restoreState } from './state.js';
 
 const STORAGE_KEY = 'silbentrainer.v1';
 const GROUPS = {
@@ -28,6 +28,7 @@ const NO_CONSONANT_ERROR =
 
 let known = new Set();
 let maxSyllables = 2;
+let spacing = 3;
 let twoLetters = true;
 let avoidDoubled = true;
 let alternate = false;
@@ -49,6 +50,7 @@ function load() {
   const state = restoreState(raw);
   known = state.known;
   maxSyllables = state.max;
+  spacing = state.spacing;
   twoLetters = state.twoLetters;
   avoidDoubled = state.avoidDoubled;
   alternate = state.alternate;
@@ -59,7 +61,7 @@ function save() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ known: [...known], max: maxSyllables, twoLetters, avoidDoubled, alternate }),
+      JSON.stringify({ known: [...known], max: maxSyllables, spacing, twoLetters, avoidDoubled, alternate }),
     );
   } catch {
     // storage unavailable
@@ -105,39 +107,36 @@ function buildTiles() {
   }
 }
 
-function selectMax(n, { focus = false } = {}) {
-  maxSyllables = n;
-  refreshMaxChoices();
-  if (focus) document.querySelector('.segment[tabindex="0"]').focus();
-}
-
-function buildMaxChoices() {
-  const container = $('#max');
-  for (const n of MAX_CHOICES) {
+function buildSegments(container, choices, getValue, setValue) {
+  const refresh = () => {
+    container.querySelectorAll('.segment').forEach((button) => {
+      const checked = Number(button.textContent) === getValue();
+      button.setAttribute('aria-checked', String(checked));
+      button.tabIndex = checked ? 0 : -1;
+    });
+  };
+  const select = (n, { focus = false } = {}) => {
+    setValue(n);
+    refresh();
+    if (focus) container.querySelector('.segment[tabindex="0"]').focus();
+  };
+  for (const n of choices) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'segment';
     button.textContent = String(n);
     button.setAttribute('role', 'radio');
-    button.addEventListener('click', () => selectMax(n));
+    button.addEventListener('click', () => select(n));
     button.addEventListener('keydown', (event) => {
       const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
       if (!step) return;
       event.preventDefault();
-      const next = (MAX_CHOICES.indexOf(n) + step + MAX_CHOICES.length) % MAX_CHOICES.length;
-      selectMax(MAX_CHOICES[next], { focus: true });
+      const next = (choices.indexOf(n) + step + choices.length) % choices.length;
+      select(choices[next], { focus: true });
     });
     container.append(button);
   }
-  refreshMaxChoices();
-}
-
-function refreshMaxChoices() {
-  document.querySelectorAll('.segment').forEach((button) => {
-    const checked = Number(button.textContent) === maxSyllables;
-    button.setAttribute('aria-checked', String(checked));
-    button.tabIndex = checked ? 0 : -1;
-  });
+  refresh();
 }
 
 function refreshAlternate() {
@@ -157,6 +156,7 @@ function refreshTwoLetters() {
 function showReels(syllables) {
   const field = $('#reels');
   field.dataset.count = String(syllables.length);
+  field.dataset.spacing = String(spacing);
   field.replaceChildren(
     ...syllables.map((text) => {
       const span = document.createElement('span');
@@ -231,7 +231,7 @@ async function showPlay() {
   cancelSpin();
   $('#setup').hidden = true;
   $('#play').hidden = false;
-  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate);
+  $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate, spacing);
   spin(false);
   $('#start').focus();
 }
@@ -262,7 +262,8 @@ function init() {
   $('#load-error').hidden = true;
   const hasSavedConfig = load();
   buildTiles();
-  buildMaxChoices();
+  buildSegments($('#max'), MAX_CHOICES, () => maxSyllables, (n) => (maxSyllables = n));
+  buildSegments($('#spacing'), SPACING_CHOICES, () => spacing, (n) => (spacing = n));
   refreshTwoLetters();
   refreshNoDoubles();
   refreshAlternate();
