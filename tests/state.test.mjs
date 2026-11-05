@@ -63,3 +63,11 @@ assert.equal(
 );
 
 console.log('state tests passed');
+
+assert.equal(empty.spacing, 3, 'spacing defaults to the widest step');
+assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: 1 })).spacing, 1);
+assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: 2 })).spacing, 2);
+assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: 7 })).spacing, 3, 'unknown spacing falls back');
+assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: '1' })).spacing, 3, 'non-number spacing falls back');
+assert.ok(!describeSelection(new Set(['a']), 2, true).includes('Abstand'), 'default spacing is not mentioned');
+assert.ok(describeSelection(new Set(['a']), 2, true, true, false, 1).includes('Abstand 1'));
