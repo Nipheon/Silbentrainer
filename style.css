@@ -39,6 +39,8 @@
 
 * { box-sizing: border-box; }
 
+html { scrollbar-gutter: stable; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -187,9 +189,7 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 .reels[data-spacing='1'] { --syllable-gap: 0rem; }
 .reels[data-spacing='2'] { --syllable-gap: 0.3125rem; }
 .reels[data-spacing='3'] { --syllable-gap: 0.625rem; }
-.syllable { font-size: clamp(1.9rem, 11vw, 3.75rem); font-weight: 400; }
-.reels[data-count='3'] .syllable { font-size: clamp(1.6rem, 8.5vw, 3.25rem); }
-.reels[data-count='4'] .syllable { font-size: clamp(1.3rem, 6.5vw, 2.75rem); }
+.syllable { font-size: var(--syllable-size, 2.5rem); font-weight: 400; }
 .syllable.spinning { opacity: 0.55; }
 
 .prompt { text-align: center; margin: 1rem 0 0; }
