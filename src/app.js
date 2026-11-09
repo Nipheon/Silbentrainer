@@ -155,6 +155,33 @@ function refreshTwoLetters() {
   $('#more-sounds-note').hidden = !twoLetters;
 }
 
+const FIT_MAX_REM = 6;
+const FIT_MIN_REM = 1;
+const FIT_MARGIN = 0.98;
+const FIT_PASSES = 5;
+
+function fitReels() {
+  const field = $('#reels');
+  const spans = [...field.children];
+  if (spans.length === 0) return;
+  const style = getComputedStyle(field);
+  const avail = field.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  if (avail <= 0) return;
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const gaps = (parseFloat(style.columnGap) || 0) * (spans.length - 1);
+  const room = avail - gaps;
+  const measure = () => spans.reduce((sum, span) => sum + span.getBoundingClientRect().width, 0);
+  let size = FIT_MAX_REM * rem;
+  field.style.setProperty('--syllable-size', `${size}px`);
+  // Glyph widths are not always linear in font size (hinting), so measure again after resizing.
+  for (let pass = 0; pass < FIT_PASSES; pass += 1) {
+    const textWidth = measure();
+    if (textWidth <= room) break;
+    size = Math.max(FIT_MIN_REM * rem, (size * room * FIT_MARGIN) / textWidth);
+    field.style.setProperty('--syllable-size', `${size}px`);
+  }
+}
+
 function showReels(syllables) {
   const field = $('#reels');
   field.dataset.count = String(syllables.length);
@@ -167,6 +194,7 @@ function showReels(syllables) {
       return span;
     }),
   );
+  fitReels();
 }
 
 function cancelSpin() {
@@ -187,6 +215,7 @@ function spin(animate = true) {
   const prompt = $('#prompt');
   const finish = () => {
     cancelSpin();
+    fitReels();
     announce(round.syllables.join(' '));
     prompt.textContent =
       round.syllables.length === 1
@@ -285,6 +314,14 @@ function init() {
   $('#go').addEventListener('click', showPlay);
   $('#start').addEventListener('click', () => spin());
   $('#back').addEventListener('click', showSetup);
+  let reelsWidth = 0;
+  new ResizeObserver(() => {
+    const width = $('#reels').clientWidth;
+    if (width === reelsWidth || spinning) return;
+    reelsWidth = width;
+    fitReels();
+  }).observe($('#reels'));
+  document.fonts.addEventListener('loadingdone', fitReels);
   wordsReady = loadWords();
   if (hasSavedConfig && canGenerate(known, { twoLetters })) showPlay();
   else $('#setup').hidden = false;
