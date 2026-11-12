@@ -71,4 +71,12 @@ assert.equal(restoreState(JSON.stringify({ known: ['a'], spacing: '1' })).spacin
 assert.ok(!describeSelection(new Set(['a']), 2, true).includes('Abstand'), 'default spacing is not mentioned');
 assert.ok(describeSelection(new Set(['a']), 2, true, true, false, 1).includes('Abstand 1'));
 
+assert.equal(empty.minutes, 5, 'timer defaults to 5 minutes');
+for (const minutes of [0, 2, 3, 5, 7, 10]) {
+  assert.equal(restoreState(JSON.stringify({ known: ['a'], minutes })).minutes, minutes);
+}
+assert.equal(restoreState(JSON.stringify({ known: ['a'], minutes: 4 })).minutes, 5, 'unknown minutes fall back');
+assert.equal(restoreState(JSON.stringify({ known: ['a'], minutes: '3' })).minutes, 5, 'non-number minutes fall back');
+assert.equal(restoreState(JSON.stringify({ known: ['a'] })).minutes, 5, 'old saved config gets the default timer');
+
 console.log('state tests passed');

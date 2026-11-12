@@ -35,6 +35,10 @@
       <div class="segments" id="spacing" role="radiogroup" aria-label="Abstand zwischen den Silben" aria-describedby="spacing-hint"></div>
       <p class="hint" id="spacing-hint">1 = kein Abstand, 3 = großer Abstand.</p>
 
+      <h2>Lesezeit in Minuten</h2>
+      <div class="segments" id="minutes" role="radiogroup" aria-label="Lesezeit in Minuten" aria-describedby="minutes-hint"></div>
+      <p class="hint" id="minutes-hint">Die Zeit läuft ab dem ersten START. „aus“ = ohne Zeitlimit.</p>
+
       <h2>Silbenregeln</h2>
       <button id="two-letters" class="switch" type="button" role="switch" aria-checked="true">
         <span class="switch-box" aria-hidden="true"></span>
@@ -54,10 +58,19 @@
     </section>
 
     <section id="play" class="card" hidden>
+      <div id="timer-bar" class="timer-bar" hidden>
+        <span id="clock" class="clock" role="timer" aria-label="Restzeit"></span>
+        <span id="count" class="count"></span>
+      </div>
       <div id="reels" class="reels" aria-hidden="true"></div>
       <p id="result" class="sr-only" aria-live="polite"></p>
       <button id="start" class="primary" type="button">START</button>
       <p id="prompt" class="prompt">Drücke START und lies die Silben.</p>
+      <div id="done" class="done" hidden>
+        <h2 id="done-title" tabindex="-1">Geschafft!</h2>
+        <p id="done-count" class="done-count"></p>
+        <button id="again" class="primary" type="button">Nochmal</button>
+      </div>
       <p id="summary" class="summary"></p>
       <p id="data-warning" class="error" role="status" hidden>Die Wörterliste konnte nicht geladen werden. Es erscheinen nur erfundene Silben.</p>
       <button id="back" class="link" type="button">Buchstaben ändern</button>

@@ -9,7 +9,7 @@ import {
   parseWords,
   unitPools,
 } from './generate.js';
-import { MAX_CHOICES, SPACING_CHOICES, describeSelection, restoreState } from './state.js';
+import { MAX_CHOICES, SPACING_CHOICES, TIMER_CHOICES, describeSelection, restoreState } from './state.js';
 
 const STORAGE_KEY = 'silbentrainer.v1';
 const GROUPS = {
@@ -24,6 +24,7 @@ const TICK_MS = 70;
 const ANNOUNCE_DELAY_MS = 60;
 const WORDS_WAIT_MS = 1500;
 const WORDS_TIMEOUT_MS = 8000;
+const CLOCK_TICK_MS = 250;
 const NO_VOWEL_ERROR = 'Wähle mindestens einen Vokal.';
 const NO_CONSONANT_ERROR =
   'Wähle zusätzlich einen Konsonanten oder eine Vokalverbindung, damit Silben mit mindestens zwei Buchstaben entstehen.';
@@ -31,12 +32,18 @@ const NO_CONSONANT_ERROR =
 let known = new Set();
 let maxSyllables = 2;
 let spacing = 3;
+let minutes = 5;
 let twoLetters = true;
 let avoidDoubled = true;
 let alternate = false;
 let words = [];
 let spinning = false;
 let timers = [];
+// Timed session: 'off' (no timer), 'ready' (clock not started), 'running', 'over' (time up, last word on screen), 'done' (summary).
+let phase = 'off';
+let rounds = 0;
+let endsAt = 0;
+let clockId = null;
 const seen = new Set();
 
 const $ = (selector) => document.querySelector(selector);
@@ -53,6 +60,7 @@ function load() {
   known = state.known;
   maxSyllables = state.max;
   spacing = state.spacing;
+  minutes = state.minutes;
   twoLetters = state.twoLetters;
   avoidDoubled = state.avoidDoubled;
   alternate = state.alternate;
@@ -63,7 +71,7 @@ function save() {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ known: [...known], max: maxSyllables, spacing, twoLetters, avoidDoubled, alternate }),
+      JSON.stringify({ known: [...known], max: maxSyllables, spacing, minutes, twoLetters, avoidDoubled, alternate }),
     );
   } catch {
     // storage unavailable
@@ -109,10 +117,10 @@ function buildTiles() {
   }
 }
 
-function buildSegments(container, choices, getValue, setValue) {
+function buildSegments(container, choices, getValue, setValue, label = String) {
   const refresh = () => {
     container.querySelectorAll('.segment').forEach((button) => {
-      const checked = Number(button.textContent) === getValue();
+      const checked = Number(button.dataset.value) === getValue();
       button.setAttribute('aria-checked', String(checked));
       button.tabIndex = checked ? 0 : -1;
     });
@@ -126,7 +134,8 @@ function buildSegments(container, choices, getValue, setValue) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'segment';
-    button.textContent = String(n);
+    button.textContent = label(n);
+    button.dataset.value = String(n);
     button.setAttribute('role', 'radio');
     button.addEventListener('click', () => select(n));
     button.addEventListener('keydown', (event) => {
@@ -204,10 +213,103 @@ function cancelSpin() {
   $('#start').removeAttribute('aria-disabled');
 }
 
+function formatClock(ms) {
+  const seconds = Math.ceil(Math.max(0, ms) / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function wordsText(n) {
+  return `${n} ${n === 1 ? 'Wort' : 'Wörter'}`;
+}
+
+function renderClock(ms) {
+  $('#clock').textContent = formatClock(ms);
+}
+
+function renderCount() {
+  // The round on screen is still being read, so it only counts once the next one starts.
+  $('#count').textContent = wordsText(Math.max(0, rounds - 1));
+}
+
+function stopClock() {
+  clearInterval(clockId);
+  clockId = null;
+}
+
+function resetSession() {
+  stopClock();
+  phase = minutes ? 'ready' : 'off';
+  rounds = 0;
+  $('#done').hidden = true;
+  $('#reels').hidden = false;
+  $('#reels').replaceChildren();
+  $('#result').textContent = '';
+  $('#start').hidden = false;
+  $('#start').textContent = 'START';
+  $('#prompt').hidden = false;
+  $('#prompt').textContent = minutes ? 'Drücke START. Dann läuft die Zeit.' : 'Drücke START und lies die Silben.';
+  $('#timer-bar').hidden = !minutes;
+  if (minutes) {
+    renderClock(minutes * 60000);
+    renderCount();
+  }
+}
+
+function startClock() {
+  phase = 'running';
+  endsAt = Date.now() + minutes * 60000;
+  clockId = setInterval(tick, CLOCK_TICK_MS);
+  tick();
+}
+
+function tick() {
+  const left = endsAt - Date.now();
+  renderClock(left);
+  if (left <= 0) timeOver();
+}
+
+function timeOver() {
+  stopClock();
+  phase = 'over';
+  if (!spinning) showOver();
+}
+
+function showOver() {
+  $('#start').textContent = 'Fertig';
+  $('#prompt').textContent = 'Die Zeit ist um. Lies das letzte Wort.';
+}
+
+function showResult() {
+  phase = 'done';
+  $('#reels').hidden = true;
+  $('#start').hidden = true;
+  $('#prompt').hidden = true;
+  $('#timer-bar').hidden = true;
+  $('#done-count').textContent = `${wordsText(rounds)} gelesen`;
+  $('#done').hidden = false;
+  announce(`Geschafft! ${wordsText(rounds)} gelesen`);
+  $('#done-title').focus();
+}
+
+function onStart() {
+  if (spinning) return;
+  if (phase === 'over') {
+    showResult();
+    return;
+  }
+  if (phase === 'done') return;
+  if (phase === 'ready') startClock();
+  spin();
+}
+
 function spin(animate = true) {
   if (spinning) return;
   const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters, avoidDoubled, alternate });
   if (!round) return;
+  if (phase === 'running') {
+    rounds += 1;
+    renderCount();
+  }
   const pools = unitPools(known, { twoLetters });
 
   showReels(round.syllables);
@@ -221,6 +323,7 @@ function spin(animate = true) {
       round.syllables.length === 1
         ? 'Lies die Silbe. Bereit für die nächste Runde?'
         : `Lies die ${round.syllables.length} Silben. Bereit für die nächste Runde?`;
+    if (phase === 'over') showOver();
   };
 
   if (reducedMotion || !animate) {
@@ -263,12 +366,15 @@ async function showPlay() {
   $('#play').hidden = false;
   $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate, spacing);
   await Promise.race([wordsReady, new Promise((resolve) => setTimeout(resolve, WORDS_WAIT_MS))]);
-  spin(false);
+  resetSession();
+  if (!minutes) spin(false);
   $('#start').focus();
 }
 
 function showSetup() {
   cancelSpin();
+  stopClock();
+  phase = 'off';
   $('#play').hidden = true;
   $('#setup').hidden = false;
   $('#setup h1').focus();
@@ -295,6 +401,7 @@ function init() {
   buildTiles();
   buildSegments($('#max'), MAX_CHOICES, () => maxSyllables, (n) => (maxSyllables = n));
   buildSegments($('#spacing'), SPACING_CHOICES, () => spacing, (n) => (spacing = n));
+  buildSegments($('#minutes'), TIMER_CHOICES, () => minutes, (n) => (minutes = n), (n) => (n === 0 ? 'aus' : String(n)));
   refreshTwoLetters();
   refreshNoDoubles();
   refreshAlternate();
@@ -312,7 +419,11 @@ function init() {
     $('#setup-error').hidden = true;
   });
   $('#go').addEventListener('click', showPlay);
-  $('#start').addEventListener('click', () => spin());
+  $('#start').addEventListener('click', onStart);
+  $('#again').addEventListener('click', () => {
+    resetSession();
+    $('#start').focus();
+  });
   $('#back').addEventListener('click', showSetup);
   let reelsWidth = 0;
   new ResizeObserver(() => {
