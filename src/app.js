@@ -237,6 +237,7 @@ function stopClock() {
 }
 
 function resetSession() {
+  cancelSpin();
   stopClock();
   phase = minutes ? 'ready' : 'off';
   rounds = 0;
@@ -271,7 +272,10 @@ function tick() {
 function timeOver() {
   stopClock();
   phase = 'over';
-  if (!spinning) showOver();
+  if (!spinning) {
+    showOver();
+    announce('Die Zeit ist um.');
+  }
 }
 
 function showOver() {
@@ -293,6 +297,7 @@ function showResult() {
 
 function onStart() {
   if (spinning) return;
+  if (phase === 'running') tick();
   if (phase === 'over') {
     showResult();
     return;
@@ -318,7 +323,8 @@ function spin(animate = true) {
   const finish = () => {
     cancelSpin();
     fitReels();
-    announce(round.syllables.join(' '));
+    const shown = round.syllables.join(' ');
+    announce(phase === 'over' ? `${shown}. Die Zeit ist um.` : shown);
     prompt.textContent =
       round.syllables.length === 1
         ? 'Lies die Silbe. Bereit für die nächste Runde?'
@@ -366,6 +372,7 @@ async function showPlay() {
   $('#play').hidden = false;
   $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate, spacing);
   await Promise.race([wordsReady, new Promise((resolve) => setTimeout(resolve, WORDS_WAIT_MS))]);
+  if ($('#play').hidden) return;
   resetSession();
   if (!minutes) spin(false);
   $('#start').focus();
