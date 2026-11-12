@@ -56,6 +56,8 @@ main {
   padding: 1rem;
 }
 
+[hidden] { display: none !important; }
+
 .card {
   background: var(--card);
   border: 3px solid var(--line);
@@ -191,6 +193,22 @@ h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 .reels[data-spacing='3'] { --syllable-gap: 0.625rem; }
 .syllable { font-size: var(--syllable-size, 2.5rem); font-weight: 400; }
 .syllable.spinning { opacity: 0.55; }
+
+.timer-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.timer-bar .count { font-size: 1.4rem; }
+
+.done { text-align: center; }
+.done h2 { font-size: 2rem; margin: 0.5rem 0; }
+.done-count { font-size: 1.75rem; font-weight: 700; margin: 0; }
 
 .prompt { text-align: center; margin: 1rem 0 0; }
 .summary { text-align: center; color: var(--muted); font-size: 0.95rem; margin: 1.5rem 0 0; }

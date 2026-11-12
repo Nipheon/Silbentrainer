@@ -9,6 +9,8 @@ export const MAX_CHOICES = [1, 2, 3, 4];
 export const DEFAULT_MAX = 2;
 export const SPACING_CHOICES = [1, 2, 3];
 export const DEFAULT_SPACING = 3;
+export const TIMER_CHOICES = [0, 2, 3, 5, 7, 10];
+export const DEFAULT_MINUTES = 5;
 export const DEFAULT_KNOWN = ['a', 'e', 'i', 'o', 'l', 'm', 's'];
 
 const ALL_UNITS = new Set([...VOWELS, ...VOWEL_COMBOS, ...CONSONANTS, ...CONSONANT_COMBOS]);
@@ -19,6 +21,7 @@ export function restoreState(raw) {
     known: new Set(DEFAULT_KNOWN),
     max: DEFAULT_MAX,
     spacing: DEFAULT_SPACING,
+    minutes: DEFAULT_MINUTES,
     twoLetters: true,
     avoidDoubled: true,
     alternate: false,
@@ -39,6 +42,7 @@ export function restoreState(raw) {
   }
   if (MAX_CHOICES.includes(saved.max)) state.max = saved.max;
   if (SPACING_CHOICES.includes(saved.spacing)) state.spacing = saved.spacing;
+  if (TIMER_CHOICES.includes(saved.minutes)) state.minutes = saved.minutes;
   if (typeof saved.twoLetters === 'boolean') state.twoLetters = saved.twoLetters;
   if (typeof saved.avoidDoubled === 'boolean') state.avoidDoubled = saved.avoidDoubled;
   if (typeof saved.alternate === 'boolean') state.alternate = saved.alternate;

@@ -34,6 +34,7 @@ zurück zur Auswahl. Ohne spielbare gespeicherte Auswahl erscheint zuerst die Au
 - Erfundene Silben laufen durch eine Sperrliste (`src/blocklist.js`).
 - Echte Wörter werden bevorzugt: Gibt es zur Auswahl ein passendes, noch nicht gezeigtes Wort, besteht eine Runde in drei von vier Fällen daraus (`realRatio` in `src/generate.js`).
 - Der Abstand zwischen den Silben hat drei Stufen: 1 kein Abstand, 2 halber, 3 voller Abstand (Standard).
+- Lesezeit: aus, 2, 3, 5, 7 oder 10 Minuten (Standard 5). Die Zeit läuft ab dem ersten START; danach bleibt das letzte Wort stehen, und „Fertig“ zeigt, wie viele Wörter gelesen wurden.
 
 ## Wörterliste
 
