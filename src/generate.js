@@ -123,16 +123,6 @@ export function syllableIsKnown(syllable, known) {
   return tokens.some((t) => VOWEL_UNITS.has(t)) && tokens.every((t) => known.has(t));
 }
 
-export function parseWords(entries) {
-  return entries.map((entry) => ({ text: entry.replaceAll('·', ''), syllables: entry.split('·') }));
-}
-
-export function wordIsKnown(word, known, { twoLetters = false } = {}) {
-  return word.syllables.every(
-    (s) => (twoLetters ? s.length <= 2 : s.length > 1) && syllableIsKnown(s, known),
-  );
-}
-
 function capitalize(text) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -188,37 +178,11 @@ export function hasDoubledConsonant(syllables) {
 
 const comboKey = (syllables) => syllables.join('·').toLowerCase();
 
-const eligibleCache = new WeakMap();
-
-// Words the current selection can show; cached because the selection rarely changes between rounds.
-function eligibleWords(words, known, { twoLetters, avoidDoubled, alternate }) {
-  const cacheKey = `${[...known].sort().join(',')}|${twoLetters}|${avoidDoubled}|${alternate}`;
-  if (!eligibleCache.has(words)) eligibleCache.set(words, new Map());
-  const cache = eligibleCache.get(words);
-  if (!cache.has(cacheKey)) {
-    cache.set(
-      cacheKey,
-      words
-        .filter(
-          (w) =>
-            wordIsKnown(w, known, { twoLetters }) &&
-            !hasMergingJunction(w.syllables) &&
-            !(avoidDoubled && hasDoubledConsonant(w.syllables)) &&
-            !(alternate && !alternates(w.syllables)),
-        )
-        .map((w) => ({ word: w, key: comboKey(w.syllables) })),
-    );
-  }
-  return cache.get(cacheKey);
-}
-
 export function generate(
   known,
   maxSyllables,
-  words,
   rng = Math.random,
   {
-    realRatio = 0.75,
     seen = new Set(),
     twoLetters = false,
     avoidDoubled = false,
@@ -228,15 +192,8 @@ export function generate(
   const pools = unitPools(known, { twoLetters });
   if (!canGenerate(known, { twoLetters })) return null;
 
-  const eligible = eligibleWords(words, known, { twoLetters, avoidDoubled, alternate });
   const draw = () => {
     const count = pickCount(maxSyllables, rng);
-    const candidates = eligible
-      .filter((e) => e.word.syllables.length === count && !seen.has(e.key))
-      .map((e) => e.word);
-    if (candidates.length > 0 && rng() < realRatio) {
-      return { syllables: pick(candidates, rng).syllables, real: true };
-    }
     const junctionIsBad = (previous, next) =>
       mergesAtJunction(previous, next) ||
       (avoidDoubled && doublesConsonant(previous, next)) ||
@@ -260,11 +217,11 @@ export function generate(
     // No syllable could follow (only vowel combinations known, for example): drop the round instead of showing it.
     if (syllables.some((syllable, i) => i > 0 && junctionIsBad(syllables[i - 1], syllable))) return null;
     if (rng() < 0.5) syllables[0] = capitalize(syllables[0]);
-    return { syllables, real: false };
+    return { syllables };
   };
 
   const acceptable = (round) =>
-    round.syllables.join('').length >= 2 && (round.real || !isBlocked(round.syllables));
+    round.syllables.join('').length >= 2 && !isBlocked(round.syllables);
   const search = () => {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const round = draw();

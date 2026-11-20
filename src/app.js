@@ -6,7 +6,6 @@ import {
   canGenerate,
   generate,
   makeSyllable,
-  parseWords,
   unitPools,
 } from './generate.js';
 import { MAX_CHOICES, SPACING_CHOICES, TIMER_CHOICES, describeSelection, restoreState } from './state.js';
@@ -22,8 +21,6 @@ const SPIN_MS = 600;
 const SPIN_STAGGER_MS = 350;
 const TICK_MS = 70;
 const ANNOUNCE_DELAY_MS = 60;
-const WORDS_WAIT_MS = 1500;
-const WORDS_TIMEOUT_MS = 8000;
 const CLOCK_TICK_MS = 250;
 const NO_VOWEL_ERROR = 'Wähle mindestens einen Vokal.';
 const NO_CONSONANT_ERROR =
@@ -36,7 +33,6 @@ let minutes = 5;
 let twoLetters = true;
 let avoidDoubled = true;
 let alternate = false;
-let words = [];
 let spinning = false;
 let timers = [];
 // Timed session: 'off' (no timer), 'ready' (clock not started), 'running', 'over' (time up, last word on screen), 'done' (summary).
@@ -309,7 +305,7 @@ function onStart() {
 
 function spin(animate = true) {
   if (spinning) return;
-  const round = generate(known, maxSyllables, words, Math.random, { seen, twoLetters, avoidDoubled, alternate });
+  const round = generate(known, maxSyllables, Math.random, { seen, twoLetters, avoidDoubled, alternate });
   if (!round) return;
   if (phase === 'running') {
     rounds += 1;
@@ -361,7 +357,7 @@ function spin(animate = true) {
   });
 }
 
-async function showPlay() {
+function showPlay() {
   if (!canGenerate(known, { twoLetters })) {
     showSetupError();
     return;
@@ -371,8 +367,6 @@ async function showPlay() {
   $('#setup').hidden = true;
   $('#play').hidden = false;
   $('#summary').textContent = describeSelection(known, maxSyllables, twoLetters, avoidDoubled, alternate, spacing);
-  await Promise.race([wordsReady, new Promise((resolve) => setTimeout(resolve, WORDS_WAIT_MS))]);
-  if ($('#play').hidden) return;
   resetSession();
   if (!minutes) spin(false);
   $('#start').focus();
@@ -386,21 +380,6 @@ function showSetup() {
   $('#setup').hidden = false;
   $('#setup h1').focus();
 }
-
-async function loadWords() {
-  try {
-    const response = await fetch('data/words.json', { signal: AbortSignal.timeout(WORDS_TIMEOUT_MS) });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const entries = await response.json();
-    if (!Array.isArray(entries)) throw new Error('not a list');
-    words = parseWords(entries.filter((entry) => typeof entry === 'string'));
-  } catch {
-    words = [];
-    $('#data-warning').hidden = false;
-  }
-}
-
-let wordsReady = Promise.resolve();
 
 function init() {
   $('#load-error').hidden = true;
@@ -440,7 +419,6 @@ function init() {
     fitReels();
   }).observe($('#reels'));
   document.fonts.addEventListener('loadingdone', fitReels);
-  wordsReady = loadWords();
   if (hasSavedConfig && canGenerate(known, { twoLetters })) showPlay();
   else $('#setup').hidden = false;
 }
