@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { alternates, consonantsMeet, doublesConsonant, hasDoubledConsonant } from '../src/generate.js';
 import { isBlocked } from '../src/blocklist.js';
-import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, parseWords, syllableIsKnown, tokenize, wordIsKnown } from '../src/generate.js';
+import { canGenerate, generate, pickCount, hasMergingJunction, mergesAtJunction, syllableIsKnown, tokenize } from '../src/generate.js';
 
-const words = parseWords(JSON.parse(readFileSync(new URL('../data/words.json', import.meta.url))));
 const known = new Set(['a', 'l', 'm']);
 
 assert.deepEqual(tokenize('Schick'), ['sch', 'i', 'ck']);
@@ -18,40 +16,31 @@ assert.ok(!syllableIsKnown('ma', new Set(['a'])), 'm unknown');
 assert.ok(!syllableIsKnown('bie', new Set(['b', 'i', 'e'])), 'ie only with ie unit');
 assert.ok(!syllableIsKnown('sche', new Set(['s', 'e', 'h'])), 'sch needs own unit');
 
-const byText = (t) => words.find((w) => w.text === t);
-assert.ok(wordIsKnown(byText('Lama'), known));
-assert.ok(wordIsKnown(byText('Mama'), known));
-assert.ok(!wordIsKnown(byText('Oma'), known));
-
 let seed = 42;
 const rng = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
 
-let real = 0;
 for (let i = 0; i < 2000; i++) {
-  const r = generate(known, 2, words, rng);
+  const r = generate(known, 2, rng);
   assert.ok(r.syllables.length >= 1 && r.syllables.length <= 2);
   for (const s of r.syllables) assert.ok(syllableIsKnown(s, known), `bad syllable ${s}`);
-  if (r.real) real++;
 }
-assert.ok(real > 0, 'real words appear');
 
-assert.equal(generate(new Set(['l', 'm']), 3, words, rng), null, 'no vowel, no output');
+assert.equal(generate(new Set(['l', 'm']), 3, rng), null, 'no vowel, no output');
 
-assert.equal(generate(new Set(['a']), 2, words, rng), null, 'single letter syllables are never shown');
-assert.equal(generate(new Set(['a', 'e']), 2, words, rng), null, 'vowels alone cannot form 2 letters');
-const combosOnly = generate(new Set(['ei']), 2, words, rng);
+assert.equal(generate(new Set(['a']), 2, rng), null, 'single letter syllables are never shown');
+assert.equal(generate(new Set(['a', 'e']), 2, rng), null, 'vowels alone cannot form 2 letters');
+const combosOnly = generate(new Set(['ei']), 2, rng);
 assert.ok(combosOnly.syllables.every((s) => s.toLowerCase() === 'ei'));
 
 for (let i = 0; i < 3000; i++) {
-  for (const s of generate(known, 3, words, rng).syllables) assert.ok(s.length >= 2, `single letter ${s}`);
+  for (const s of generate(known, 3, rng).syllables) assert.ok(s.length >= 2, `single letter ${s}`);
 }
-assert.ok(!wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a'])), 'O·ma has a single-letter syllable');
 
 const seen = new Set();
 const small = new Set(['a', 'l']);
 const shown = [];
 for (let i = 0; i < 40; i++) {
-  const r = generate(small, 1, words, rng, { realRatio: 0, seen });
+  const r = generate(small, 1, rng, { seen });
   shown.push(r.syllables.join('').toLowerCase());
 }
 const distinctFirstRun = new Set(shown.slice(0, 2));
@@ -64,7 +53,7 @@ for (let i = 1; i < shown.length; i++) {
 
 const withCk = new Set(['a', 'k', 'c', 'ck']);
 for (let i = 0; i < 500; i++) {
-  for (const s of generate(withCk, 3, words, rng).syllables) {
+  for (const s of generate(withCk, 3, rng).syllables) {
     assert.ok(!/^ck/i.test(s), 'ck only at end');
   }
 }
@@ -77,7 +66,7 @@ assert.ok(syllableIsKnown('sta', new Set(['a', 'st'])));
 
 const withSt = new Set(['a', 'm', 's', 't', 'st', 'sp', 'p']);
 for (let i = 0; i < 1000; i++) {
-  for (const s of generate(withSt, 3, words, rng, { realRatio: 0 }).syllables) {
+  for (const s of generate(withSt, 3, rng).syllables) {
     assert.ok(!/(st|sp)$/i.test(s), 'st/sp never at syllable end');
   }
 }
@@ -91,10 +80,9 @@ assert.ok(hasMergingJunction(['ma', 'le', 'im']));
 
 const vowelHeavy = new Set(['l', 'm', 'a', 'e', 'i', 'u', 'ie', 'au', 'ei']);
 for (let i = 0; i < 5000; i++) {
-  const r = generate(vowelHeavy, 4, words, rng, { realRatio: 0.3 });
+  const r = generate(vowelHeavy, 4, rng);
   assert.ok(!hasMergingJunction(r.syllables), `merging junction in ${r.syllables.join(' ')}`);
 }
-assert.ok(words.every((w) => !hasMergingJunction(w.syllables)), 'word list has no merging junction');
 
 const tally = { 1: 0, 2: 0, 3: 0, 4: 0 };
 for (let i = 0; i < 10000; i++) tally[pickCount(3, rng)]++;
@@ -108,7 +96,7 @@ const rich = new Set(['a', 'e', 'i', 'o', 'u', 'ei', 'au', 'l', 'm', 's', 't', '
 let oneLetter = 0;
 let twoLetter = 0;
 for (let i = 0; i < 5000; i++) {
-  const r = generate(rich, 4, words, rng, { twoLetters: true, realRatio: 0.5 });
+  const r = generate(rich, 4, rng, { twoLetters: true });
   for (const s of r.syllables) {
     assert.ok(s.length === 1 || s.length === 2, `not one or two letters: ${s}`);
     if (s.length === 1) oneLetter++;
@@ -124,19 +112,14 @@ assert.ok(!canGenerate(new Set(['a', 'e']), { twoLetters: false }), 'never a sin
 assert.ok(!canGenerate(new Set(['l', 'm']), { twoLetters: true }), 'no vowel, no syllable');
 assert.ok(canGenerate(new Set(['ei']), { twoLetters: true }), 'ei is two letters');
 for (let i = 0; i < 500; i++) {
-  for (const x of generate(new Set(['sch', 'a', 'l']), 3, words, rng, { twoLetters: true, realRatio: 0 }).syllables) {
+  for (const x of generate(new Set(['sch', 'a', 'l']), 3, rng, { twoLetters: true }).syllables) {
     assert.ok(!x.toLowerCase().includes('sch'), 'sch never fits in one or two letters');
   }
 }
 assert.ok(canGenerate(new Set(['sch', 'a']), { twoLetters: false }));
-assert.ok(wordIsKnown(byText('Mama'), known, { twoLetters: true }));
-assert.ok(wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a']), { twoLetters: true }), 'O·ma has a one-letter syllable');
-assert.ok(!wordIsKnown(byText('Oma'), new Set(['o', 'm', 'a'])), 'O·ma needs the option');
-assert.ok(!wordIsKnown(byText('Abend'), new Set(['a', 'b', 'e', 'n', 'd']), { twoLetters: true }), 'bend has four letters');
-assert.ok(!wordIsKnown(byText('Mal'), known, { twoLetters: true }), 'Mal has three letters');
 let threeLetter = 0;
 for (let i = 0; i < 3000; i++) {
-  if (generate(known, 2, words, rng).syllables.some((s) => s.length === 3)) threeLetter++;
+  if (generate(known, 2, rng).syllables.some((s) => s.length === 3)) threeLetter++;
 }
 assert.ok(threeLetter > 0, 'longer syllables still possible when the option is off');
 
@@ -144,35 +127,13 @@ assert.ok(threeLetter > 0, 'longer syllables still possible when the option is o
 let capitalFirst = 0;
 let lowerFirst = 0;
 for (let i = 0; i < 2000; i++) {
-  const r = generate(known, 3, words, rng, { realRatio: 0 });
+  const r = generate(known, 3, rng);
   assert.ok(r.syllables.slice(1).every((x) => x === x.toLowerCase()), `later syllable capitalised: ${r.syllables}`);
   assert.equal(r.syllables[0].slice(1), r.syllables[0].slice(1).toLowerCase());
   if (r.syllables[0][0] !== r.syllables[0][0].toLowerCase()) capitalFirst++;
   else lowerFirst++;
 }
 assert.ok(capitalFirst > 800 && lowerFirst > 800, `first letter capitalised about half the time: ${capitalFirst}/${lowerFirst}`);
-
-// real words keep their stored spelling
-const keepsCase = new Set();
-for (let i = 0; i < 500; i++) {
-  const r = generate(new Set(['m', 'a', 'l', 'o', 'i', 's']), 3, words, rng, { realRatio: 1, twoLetters: true });
-  if (r.real) keepsCase.add(r.syllables.join(''));
-}
-assert.ok(keepsCase.has('Salami') || keepsCase.has('Mama'), 'real words appear with stored casing');
-assert.ok(![...keepsCase].some((w) => w === w.toLowerCase() && /^[A-ZÄÖÜ]/.test(w)));
-
-// real words: never longer than the configured maximum, never already shown
-const pool = new Set(['b', 'n', 'a', 'm', 'e']);
-const twoAndThree = parseWords(['Ma·ma', 'Ba·na·ne', 'Na·ne']);
-for (let i = 0; i < 1000; i++) {
-  const r = generate(pool, 2, twoAndThree, rng, { realRatio: 1, twoLetters: true });
-  assert.ok(r.syllables.length <= 2, `too many syllables: ${r.syllables}`);
-}
-const alreadyShown = new Set(['ma·ma', 'na·ne']);
-for (let i = 0; i < 500; i++) {
-  const r = generate(pool, 2, twoAndThree, rng, { realRatio: 1, twoLetters: true, seen: new Set(alreadyShown) });
-  assert.ok(!(r.real && alreadyShown.has(r.syllables.join('·').toLowerCase())), `repeated real word ${r.syllables}`);
-}
 
 // merging pairs, one by one
 for (const [a, b] of [['me', 'ut'], ['mä', 'ut'], ['mi', 'et'], ['me', 'it'], ['ma', 'it'], ['ma', 'ut']]) {
@@ -187,60 +148,33 @@ assert.ok(isBlocked(['mö', 'se']));
 assert.ok(!isBlocked(['la', 'ma']));
 const risky = new Set(['h', 'u', 'r', 'e', 'n', 'a', 'z', 'i', 'm', 'ö', 's', 'k', 'p', 'l', 'o']);
 for (let i = 0; i < 20000; i++) {
-  const r = generate(risky, 3, words, rng, { realRatio: 0, twoLetters: true });
+  const r = generate(risky, 3, rng, { twoLetters: true });
   assert.ok(!isBlocked(r.syllables), `blocked string shown: ${r.syllables.join(' ')}`);
 }
 
 // limitation we accept: with only a vowel pair the junction cannot be avoided
-const onlyEi = generate(new Set(['ei']), 2, words, rng, { twoLetters: true });
+const onlyEi = generate(new Set(['ei']), 2, rng, { twoLetters: true });
 assert.ok(onlyEi.syllables.every((x) => x.toLowerCase() === 'ei'));
 
 // never throws for odd maximum
-assert.ok(generate(known, 0, words, rng).syllables.length >= 1);
+assert.ok(generate(known, 0, rng).syllables.length >= 1);
 
-// exact syllable count: shorter real words only in the shorter rounds (~20% of draws)
-const mixed = parseWords(['am', 'Ma·ma']);
-let oneSyllable = 0;
-for (let i = 0; i < 5000; i++) {
-  const r = generate(new Set(['m', 'a']), 2, mixed, rng, { realRatio: 1, twoLetters: true });
-  if (r.real && r.syllables.length === 1) oneSyllable++;
-}
-assert.ok(oneSyllable > 750 && oneSyllable < 1250, `one-syllable words only for count 1, got ${oneSyllable}/5000`);
-
-// real words with a merging junction are never served
-const bad = parseWords(['la·ut']);
-for (let i = 0; i < 300; i++) {
-  const r = generate(new Set(['l', 'a', 'u', 't']), 2, bad, rng, { realRatio: 1, twoLetters: true });
-  assert.ok(!(r.real && r.syllables.join('·') === 'la·ut'), 'word with merging junction served');
-}
-
-// doubled vowels are their own units, available when the two-letter option is off
 assert.deepEqual(tokenize('Tee'), ['t', 'ee']);
 assert.deepEqual(tokenize('Aal'), ['aa', 'l']);
 assert.ok(!syllableIsKnown('tee', new Set(['t', 'e'])), 'ee needs its own unit');
 assert.ok(syllableIsKnown('tee', new Set(['t', 'ee'])));
-assert.ok(wordIsKnown(byText('Tee'), new Set(['t', 'ee'])));
-assert.ok(!wordIsKnown(byText('Tee'), new Set(['t', 'e'])));
-assert.ok(!wordIsKnown(byText('Tee'), new Set(['t', 'ee']), { twoLetters: true }), 'Tee has three letters');
 assert.ok(mergesAtJunction('te', 'er'), 'e + e across syllables would read as ee');
 const free = new Set(['t', 's', 'l', 'ee', 'aa']);
 const seenSyllables = new Set();
 for (let i = 0; i < 3000; i++) {
-  for (const x of generate(free, 2, words, rng, { realRatio: 0, twoLetters: false }).syllables) seenSyllables.add(x.toLowerCase());
+  for (const x of generate(free, 2, rng, { twoLetters: false }).syllables) seenSyllables.add(x.toLowerCase());
 }
 assert.ok(seenSyllables.has('tee') || seenSyllables.has('see'), 'syllables like tee/see appear with the option off');
 const strict = new Set();
 for (let i = 0; i < 3000; i++) {
-  for (const x of generate(free, 2, words, rng, { realRatio: 0, twoLetters: true }).syllables) strict.add(x.toLowerCase());
+  for (const x of generate(free, 2, rng, { twoLetters: true }).syllables) strict.add(x.toLowerCase());
 }
 assert.ok(![...strict].some((x) => x.length > 2), 'no three-letter syllables with the option on');
-
-let realFree = false;
-for (let i = 0; i < 2000 && !realFree; i++) {
-  const r = generate(free, 1, words, rng, { realRatio: 1, twoLetters: false });
-  if (r.real && ['Tee', 'See', 'Aal'].includes(r.syllables[0])) realFree = true;
-}
-assert.ok(realFree, 'Tee/See/Aal are served as real words with the option off');
 
 // doubled consonants across a syllable junction (at te, op pe, am ma, en na)
 for (const [a, b] of [['at', 'te'], ['op', 'pe'], ['am', 'ma'], ['en', 'na'], ['Al', 'la']]) {
@@ -259,31 +193,19 @@ assert.ok(hasDoubledConsonant(['la', 'am', 'ma']));
 const doublePool = new Set(['a', 'o', 'e', 'l', 'm', 'n', 'p', 't']);
 let doubledOff = 0;
 for (let i = 0; i < 4000; i++) {
-  const on = generate(doublePool, 3, words, rng, { realRatio: 0.3, twoLetters: true, avoidDoubled: true });
+  const on = generate(doublePool, 3, rng, { twoLetters: true, avoidDoubled: true });
   assert.ok(!hasDoubledConsonant(on.syllables), `doubled consonant: ${on.syllables.join(' ')}`);
-  const off = generate(doublePool, 3, words, rng, { realRatio: 0, twoLetters: true, avoidDoubled: false });
+  const off = generate(doublePool, 3, rng, { twoLetters: true, avoidDoubled: false });
   if (hasDoubledConsonant(off.syllables)) doubledOff++;
 }
 assert.ok(doubledOff > 100, `doubles still appear with the option off (${doubledOff})`);
 
-// real words with a doubled consonant (Rol·ler, Sup·pe) are skipped only when the option is on
-const doubledWords = parseWords(['Rol·ler']);
-const rollerKnown = new Set(['r', 'o', 'l', 'e']);
-let rollerOff = false;
-for (let i = 0; i < 400; i++) {
-  const on = generate(rollerKnown, 2, doubledWords, rng, { realRatio: 1, avoidDoubled: true });
-  assert.ok(!(on.real && on.syllables.join('') === 'Roller'), 'Roller served despite the option');
-  const off = generate(rollerKnown, 2, doubledWords, rng, { realRatio: 1, avoidDoubled: false });
-  if (off.real && off.syllables.join('') === 'Roller') rollerOff = true;
-}
-assert.ok(rollerOff, 'Roller is served when the option is off');
-
-// only the first letter of the first syllable may be uppercase, with every letter known, real words included
+// only the first letter of the first syllable may be uppercase, with every letter known
 const everything = new Set(['a', 'e', 'i', 'o', 'u', 'ä', 'ö', 'ü', 'ei', 'au', 'eu', 'äu', 'ie', 'aa', 'ee', 'oo',
   'b', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'w', 'z', 'ch', 'sch', 'ck', 'qu', 'st', 'sp']);
 for (const twoLetters of [true, false]) {
   for (let i = 0; i < 4000; i++) {
-    const r = generate(everything, 4, words, rng, { twoLetters, avoidDoubled: true });
+    const r = generate(everything, 4, rng, { twoLetters, avoidDoubled: true });
     const text = r.syllables.join('');
     assert.ok(text.slice(1) === text.slice(1).toLowerCase(), `uppercase after the first letter: ${r.syllables.join(' ')}`);
   }
@@ -302,27 +224,17 @@ const lowVowels = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']);
 for (const twoLetters of [true, false]) {
   for (const avoidDoubled of [true, false]) {
     for (let i = 0; i < 3000; i++) {
-      const r = generate(lowVowels, 4, words, rng, { twoLetters, avoidDoubled, realRatio: 0.4 });
+      const r = generate(lowVowels, 4, rng, { twoLetters, avoidDoubled });
       assert.ok(!hasMergingJunction(r.syllables), `vowels meet: ${r.syllables.join(' ')} (twoLetters=${twoLetters})`);
     }
   }
 }
 const mixedUmlaut = new Set(['ä', 'ö', 'ü', 'u', 'a', 'l', 'n', 'ei', 'au']);
 for (let i = 0; i < 3000; i++) {
-  const r = generate(mixedUmlaut, 3, words, rng, { realRatio: 0, avoidDoubled: true });
+  const r = generate(mixedUmlaut, 3, rng, { avoidDoubled: true });
   assert.ok(!hasMergingJunction(r.syllables), `vowels meet: ${r.syllables.join(' ')}`);
 }
 
-// 'O·ma' is served as a real word with the option on, never with it off
-const omaKnown = new Set(['o', 'm', 'a']);
-let omaOn = false;
-for (let i = 0; i < 600; i++) {
-  const on = generate(omaKnown, 2, words, rng, { realRatio: 1, twoLetters: true, avoidDoubled: true });
-  if (on.real && on.syllables.join('') === 'Oma') omaOn = true;
-  const off = generate(omaKnown, 2, words, rng, { realRatio: 1, twoLetters: false });
-  assert.ok(!(off.real && off.syllables.join('') === 'Oma'), 'Oma served without the option');
-}
-assert.ok(omaOn, 'Oma is served with the option on');
 // vowels and consonants take turns (option "alternate")
 assert.ok(consonantsMeet('al', 'ma'));
 assert.ok(consonantsMeet('Es', 'te'));
@@ -345,29 +257,12 @@ const turnsKnown = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's', 'n', 't']);
 for (const twoLetters of [true, false]) {
   let hitsOff = 0;
   for (let i = 0; i < 4000; i++) {
-    const on = generate(turnsKnown, 4, words, rng, { twoLetters, alternate: true, avoidDoubled: false, realRatio: 0.4 });
+    const on = generate(turnsKnown, 4, rng, { twoLetters, alternate: true, avoidDoubled: false });
     assert.ok(alternates(on.syllables), `not alternating: ${on.syllables.join(' ')} (twoLetters=${twoLetters})`);
-    const off = generate(turnsKnown, 4, words, rng, { twoLetters, alternate: false, avoidDoubled: false, realRatio: 0 });
+    const off = generate(turnsKnown, 4, rng, { twoLetters, alternate: false, avoidDoubled: false });
     if (!alternates(off.syllables)) hitsOff++;
   }
   assert.ok(hitsOff > 200, `without the option consonants do meet (${hitsOff}, twoLetters=${twoLetters})`);
-}
-
-// real words that do not alternate are skipped only with the option on (Kis·te, Hand)
-const clusterWords = parseWords(['Kis·te']);
-const clusterKnown = new Set(['k', 'i', 's', 't', 'e']);
-let kisteOff = false;
-for (let i = 0; i < 400; i++) {
-  const on = generate(clusterKnown, 2, clusterWords, rng, { realRatio: 1, alternate: true });
-  assert.ok(!(on.real && on.syllables.join('') === 'Kiste'), 'Kiste served with alternation on');
-  const off = generate(clusterKnown, 2, clusterWords, rng, { realRatio: 1, alternate: false });
-  if (off.real && off.syllables.join('') === 'Kiste') kisteOff = true;
-}
-assert.ok(kisteOff, 'Kiste is served without the option');
-const handWords = parseWords(['Hand']);
-for (let i = 0; i < 300; i++) {
-  const on = generate(new Set(['h', 'a', 'n', 'd', 'l']), 1, handWords, rng, { realRatio: 1, alternate: true });
-  assert.ok(!(on.real && on.syllables[0] === 'Hand'), 'Hand served although n and d meet');
 }
 
 // a round never consists of a single letter
@@ -376,7 +271,7 @@ for (const known of lonely) {
   for (const twoLetters of [true, false]) {
     for (const max of [1, 2, 3]) {
       for (let i = 0; i < 1500; i++) {
-        const r = generate(known, max, words, rng, { twoLetters, avoidDoubled: true, realRatio: 0.3 });
+        const r = generate(known, max, rng, { twoLetters, avoidDoubled: true });
         assert.ok(r.syllables.join('').length >= 2, `single-letter round: ${r.syllables.join(' ')} (max ${max}, twoLetters ${twoLetters})`);
       }
     }
@@ -385,28 +280,11 @@ for (const known of lonely) {
 // ...but a single-letter syllable still occurs inside longer rounds (O ma)
 let singleInside = 0;
 for (let i = 0; i < 3000; i++) {
-  const r = generate(new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']), 2, words, rng, { twoLetters: true, avoidDoubled: true });
+  const r = generate(new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']), 2, rng, { twoLetters: true, avoidDoubled: true });
   if (r.syllables.length > 1 && r.syllables.some((x) => x.length === 1)) singleInside++;
 }
 assert.ok(singleInside > 50, `one-letter syllables still appear inside longer rounds (${singleInside})`);
 
-
-{
-  const seededRng = (() => {
-    let seed = 7;
-    return () => {
-      seed = (seed * 1664525 + 1013904223) % 4294967296;
-      return seed / 4294967296;
-    };
-  })();
-  const pool = parseWords(['Mal', 'Sol', 'Los', 'Lamm']);
-  const known = new Set(['a', 'e', 'i', 'o', 'l', 'm', 's']);
-  let real = 0;
-  for (let i = 0; i < 400; i++) {
-    if (generate(known, 1, pool, seededRng, { twoLetters: false }).real) real += 1;
-  }
-  assert.ok(real / 400 > 0.6 && real / 400 < 0.9, `real words in about 75% of rounds by default when a word fits, got ${real / 400}`);
-}
 
 for (const [name, known, options] of [
   ['vowel combinations only', ['ei', 'au'], {}],
@@ -417,7 +295,7 @@ for (const [name, known, options] of [
 ]) {
   const seen = new Set();
   for (let i = 0; i < 300; i++) {
-    const r = generate(new Set(known), 3, [], rng, { seen, ...options });
+    const r = generate(new Set(known), 3, rng, { seen, ...options });
     assert.ok(r, `${name}: a round is always found`);
     assert.ok(!hasMergingJunction(r.syllables), `${name}: merging junction in ${r.syllables.join(' ')}`);
     if (options.alternate) assert.ok(alternates(r.syllables), `${name}: not alternating: ${r.syllables.join(' ')}`);
